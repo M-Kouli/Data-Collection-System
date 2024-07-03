@@ -14,7 +14,7 @@ def write_data_to_file(output_file_path, data):
             time.sleep(1)  # Wait for 1 second
 
 def main():
-    input_file_path = "D:\C2 Raw Files\CB05136_240625.txt"  # Change this to your input file path
+    input_file_path = "E:\C2 Raw Files\CB05136_240625.txt"  # Change this to your input file path
     output_file_path = 'data.txt'  # Change this to your output file path
     
     # Read data from input file

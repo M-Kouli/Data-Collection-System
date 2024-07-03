@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title> DCS </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/devices.css">  
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&amp;display=swap">
+</head>
+
+<body>
+  <div class="sidebar">
+    <div class="logo-details">
+      <i class='bx bx-game icon' ></i>
+      <div class="logo_name">CB PacDash</div>
+      <i class='bx bx-menu' id="btn"></i>
+    </div>
+    <ul class="nav-list">
+      <li>
+        <a href="#">
+          <i class='bx bx-grid-alt'></i>
+          <span class="links_name">Dashboard</span>
+        </a>
+        <span class="tooltip">Dashboard</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-devices'></i>
+          <span class="links_name">Devices</span>
+        </a>
+        <span class="tooltip">Devices</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-pie-chart-alt-2'></i>
+          <span class="links_name">Analytics</span>
+        </a>
+        <span class="tooltip">Analytics</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-folder'></i>
+          <span class="links_name">File Manager</span>
+        </a>
+        <span class="tooltip">Files</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-cog'></i>
+          <span class="links_name">Settings</span>
+        </a>
+        <span class="tooltip">Settings</span>
+      </li>
+      <li>
+        <a href="#">
+          <i class='bx bx-info-circle'></i>
+          <span class="links_name">About</span>
+        </a>
+        <span class="tooltip">About</span>
+      </li>
+    </ul>
+  </div>
+  <section class="home-section">
+    <div class="dev-wrapper">
+        <div class="selection-frame">
+            <div class="dev-dropdown-wrapper">
+                <div class="dropdown">
+                    <div class="select">
+                        <span class="selected">All Machines</span>
+                        <div class="caret"></div>
+                    </div>
+                    <ul class="menu">
+                        <li class="active">All Machines</li>
+                        <li>E Series</li>
+                        <li>C Series</li>
+                        <li>Slumberger</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="dev-search-wrapper">
+                <input type="text" placeholder="Search..">
+            </div>
+            <div class="dev-list-wrapper">
+                <div class="list-wrapper">
+                    <div class="list-name">Gollum</div>
+                    <div class="list-activity">
+                        <span class="dot"></span>
+                        <p>Active: </p><span>19m 32s</span>
+                    </div>
+                    <div class="list-tags">
+                        <div class="tag">Work Order: 12345</div>
+                    </div>
+                    <div class="list-usage">
+                        <span>Utilisation Rate</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="view-frame"></div>
+    </div>
+  </section>
+  <script src="/js/front.js"></script>
+  <script src="/js/devices.js"></script>
+</body>
