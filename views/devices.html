@@ -68,7 +68,7 @@
     <div class="dev-wrapper">
       <div class="selection-frame">
         <div class="dev-dropdown-wrapper">
-          <div class="dropdown">
+          <div class="dropdown" id="drop1">
             <div class="select">
               <span class="selected">All Machines</span>
               <div class="caret"></div>
@@ -90,16 +90,16 @@
       <div class="view-frame">
         <div class="view-header">
           <div class="view-header-name"></div>
-          <div class="view-options">
-            <div class="view-option view-active">Overview</div>
-            <div class="view-option">Tool Monitoring</div>
-            <div class="view-option">Diagnostics</div>
-            <div class="view-option">Maintenance</div>
+          <div class="view-options" id="viewFilter">
+            <div data-category="Overview"class="view-option view-active">Overview</div>
+            <div data-category="Tool Monitoring"class="view-option">Tool Monitoring</div>
+            <div data-category="Diagnostics"class="view-option">Diagnostics</div>
+            <div data-category="Maintenance"class="view-option">Maintenance</div>
           </div>
         </div>
-        <div class="view-main"></div>
+        <div class="view-main">
+        </div>
       </div>
-    </div>
   </section>
   <script src="/js/front.js"></script>
   <script src="/js/devices.js"></script>

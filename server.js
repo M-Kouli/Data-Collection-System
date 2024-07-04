@@ -138,7 +138,7 @@ app.delete('/ovens/:id', async (req, res) => {
 
 // Bind the server to 0.0.0.0 and port 3000
 const PORT = 3000;
-const HOST = '0.0.0.0';
+const HOST = 'localhost';
 server.listen(PORT, HOST, () => {
   console.log(`Server is listening on http://${HOST}:${PORT}`);
 });
