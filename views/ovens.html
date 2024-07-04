@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Ovens</title>
+</head>
+<body>
+  <h1>Manage Ovens</h1>
+  <form id="ovenForm">
+    <input type="hidden" id="ovenId">
+    <label for="name">Oven Name:</label>
+    <input type="text" id="name" required>
+    <label for="category">Category:</label>
+    <input type="text" id="category" required>
+    <button type="submit">Save Oven</button>
+  </form>
+
+  <h2>Ovens List</h2>
+  <ul id="ovensList"></ul>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const ovenForm = document.getElementById('ovenForm');
+      const ovensList = document.getElementById('ovensList');
+      const ovenIdInput = document.getElementById('ovenId');
+      const nameInput = document.getElementById('name');
+      const categoryInput = document.getElementById('category');
+
+      async function fetchOvens() {
+        const response = await fetch('/ovens');
+        const ovens = await response.json();
+        ovensList.innerHTML = '';
+        ovens.forEach(oven => {
+          const li = document.createElement('li');
+          li.textContent = `${oven.name} (${oven.category})`;
+          const editButton = document.createElement('button');
+          editButton.textContent = 'Edit';
+          editButton.onclick = () => {
+            ovenIdInput.value = oven._id;
+            nameInput.value = oven.name;
+            categoryInput.value = oven.category;
+          };
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = 'Delete';
+          deleteButton.onclick = async () => {
+            await fetch(`/ovens/${oven._id}`, { method: 'DELETE' });
+            fetchOvens();
+          };
+          li.appendChild(editButton);
+          li.appendChild(deleteButton);
+          ovensList.appendChild(li);
+        });
+      }
+
+      ovenForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const ovenId = ovenIdInput.value;
+        const name = nameInput.value;
+        const category = categoryInput.value;
+        const method = ovenId ? 'PUT' : 'POST';
+        const url = ovenId ? `/ovens/${ovenId}` : '/ovens';
+        await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, category }),
+        });
+        ovenForm.reset();
+        fetchOvens();
+      };
+
+      fetchOvens();
+    });
+  </script>
+</body>
+</html>
