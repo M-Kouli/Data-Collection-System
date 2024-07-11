@@ -33,9 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const layout = {
       title: title,
+      uirevision:'true',
       xaxis: {
         title: 'Time',
-        type: 'date'
+        type: 'category',
+        dtick: 1,
       },
       yaxis: {
         title: 'Temperature'
@@ -46,16 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       responsive: true,
       scrollZoom: true,
       displaylogo: false,
-      modeBarButtonsToAdd: [{
-        name: 'Download plot',
-        icon: Plotly.Icons.camera,
-        click: function (gd) {
-          Plotly.downloadImage(gd, {
-            format: 'png',
-            filename: 'chart'
-          });
-        }
-      }]
+      showEditInChartStudio: true,
+      plotlyServerURL: "https://chart-studio.plotly.com"
     };
 
     Plotly.newPlot('myPlotlyChart', [trace], layout, config);
@@ -66,27 +60,92 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateChartData(newData, type, option, boardNum = null) {
     chartData = newData;
     // Ensure the option string is in the correct case (usually camelCase)
-    const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
+    console.log(option);
+    if (type === 'Category'){
+      //I want you to modify this to display the P1 on the y axis, and timestamp on the x axis
+      //But have the board numbers displayed as multiple traces with a legend on the side
+          // Get unique board numbers from the data
+        let boardNumbers = [...new Set(newData.map(d => d.boardId))];
+        console.log(boardNumbers.shift());
+        
+        // Create traces for each board number
+        const traces = boardNumbers.map(boardId => ({
+          x: newData.filter(d => d.boardId === boardId).map(d => d.timestamp),
+          y: newData.filter(d => d.boardId === boardId).map(d => d.p1), // Display P1 values on the y-axis
+          mode: 'lines',
+          name: `Board ${boardId}`, // Use the board number for the trace name
+          connectgaps: true
+        }));
 
-    const trace = {
+        const layout = {
+          title: 'Category P1 Over Time',
+          uirevision: 'true',
+          xaxis: {
+            title: 'Time',
+            type: 'category',
+            dtick: 1,
+          },
+          yaxis: {
+            title: 'P1'
+          }
+        };
+    
+        Plotly.react(plotlyChart, traces, layout);
+      }
+    else{
+      const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
+      if (option === 'All'){
+        const boardOptions = ["p1", "p2", "t1", "t2", "vx","vz","ct","vt"];
+        // Set the tiemstamp on the x-axis, and all the data plotted as lines
+        // With the legend on the side to control
+        const traces = boardOptions.map(opt => ({
+          x: newData.map(d => d.timestamp),
+          y: newData.map(d => d[opt]), // Use the normalized option to map y values
+          mode: 'lines',
+          name: opt.toUpperCase(), // Use the original option for the name
+          connectgaps: true
+        }));
+    
+      const layout = {
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
+        uirevision:'true',
+        xaxis: {
+          title: 'Time',
+          type: 'category',
+          dtick: 1,
+        },
+        yaxis: {
+          title: 'Metrics' // Adjust this field based on your data
+        }
+      };
+    
+      Plotly.react(plotlyChart, traces, layout);
+      }
+      else{
+        const trace = {
         x: newData.map(d => d.timestamp),
         y: newData.map(d => d[normalizedOption]), // Use the normalized option to map y values
         mode: 'lines',
         name: option, // Use the original option for the name
-    };
-
+        connectgaps: true
+      };
+  
     const layout = {
-      title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''}Over Time`,
+      uirevision:'true',
       xaxis: {
         title: 'Time',
-        type: 'date'
+        type: 'category',
+        dtick: 1,
       },
       yaxis: {
         title: option // Adjust this field based on your data
       }
     };
-
+  
     Plotly.react(plotlyChart, [trace], layout);
+    }
+    }
   }
 
   // Fetch oven data
@@ -244,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="main-sec1-body"></div>
         </div>
       `;
-      setupDropdownEventListeners('drop2');
+      setupDropdownEventListeners('drop2',oven);
     } else if (activeTab === 'Tool Monitoring') {
       viewmain.innerHTML = `
       <div class="main-tool-header">
@@ -256,6 +315,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <ul class="menu">
                   <li data-category="Oven" class="active-menu">Oven</li>
                   <li data-category="Board">Board</li>
+                  <li data-category="Category">Category</li>
               </ul>
           </div>
           <div class="dropdown" id="drop4">
@@ -292,19 +352,25 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
       </div>
       `;
-      setupDropdownEventListeners('drop5');
-      setupDropdownEventListeners('drop4');
-      setupDynamicDropdown();
-      setupDropdownEventListeners('drop3');
+      setupDropdownEventListeners('drop5',oven);
+      setupDropdownEventListeners('drop4',oven);
+      setupDynamicDropdown(oven);
+      setupDropdownEventListeners('drop3',oven);
       initializeChart([], 'Oven Temperature Over Time'); // Initialize the chart with empty data and default title
-      fetchOvenData(selectedOven.firstChild.innerHTML, document.querySelectorAll('.selected')[1].innerHTML, document.querySelectorAll('.selected')[2].innerHTML, document.querySelectorAll('.selected')[3]?.innerHTML)
+      if(oven.name !== undefined){
+        fetchOvenData(oven.name, document.querySelectorAll('.selected')[1].innerHTML, document.querySelectorAll('.selected')[2].innerHTML, document.querySelectorAll('.selected')[3]?.innerHTML)
+      }
+      else{
+        fetchOvenData(oven.firstChild.innerHTML, document.querySelectorAll('.selected')[1].innerHTML, document.querySelectorAll('.selected')[2].innerHTML, document.querySelectorAll('.selected')[3]?.innerHTML)
+      }
+      
     } else {
       viewmain.innerHTML = `<h2>OTHER CONTENT</h2>`;
     }
   }
 
   // Function to set up event listeners for the dropdown
-  function setupDropdownEventListeners(dropdownId) {
+  function setupDropdownEventListeners(dropdownId,oven) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     const select = dropdown.querySelector('.select');
@@ -329,11 +395,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         option.classList.add('active-menu');
         // Fetch and update chart data based on the selection
         if (dropdownId === 'drop3' || dropdownId === 'drop4' || dropdownId === 'drop5') {
-          const ovenId = document.querySelector(".selected-list").firstChild.innerHTML;
           const type = document.querySelector('#drop3 .selected').innerText;
           const option = document.querySelector('#drop4 .selected').innerText;
           const boardNumber = document.querySelector('#drop5 .selected')?.innerText;
-          fetchOvenData(ovenId, type, option, boardNumber);
+          if (oven instanceof Element) {
+            console.log("Und",oven)
+            const ovenIdTemp = oven.firstChild.innerHTML
+            fetchOvenData(ovenIdTemp, type, option, boardNumber);
+          }
+          else{          
+            console.log("Defiend",oven)
+            fetchOvenData(oven.name, type, option, boardNumber);}
         }
       });
     });
@@ -341,7 +413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupDropdownEventListeners("drop1");
 
   // Function to set up dynamic dropdown based on selection
-  function setupDynamicDropdown() {
+  function setupDynamicDropdown(oven) {
     const dropdown3 = document.getElementById("drop3");
     const selected3 = dropdown3.querySelector(".selected");
     const menu4 = document.getElementById("drop4").querySelector(".menu");
@@ -361,6 +433,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         selected4.innerText = 'Temperature';
         dropdown5.classList.add('hidden');
       } else if (selectedCategory === 'Board') {
+        const boardOptions = ["All","P1", "P2", "T1", "T2", "Vx","Vz","Ct","Vt"];
+        for (let i = 0; i <= 7; i++) {
+          const li = document.createElement('li');
+          li.textContent = boardOptions[i];
+          li.dataset.category = boardOptions[i];
+          menu4.appendChild(li);
+        }
+        selected4.innerText = 'All';
+        dropdown5.classList.remove('hidden');
+      }
+      else if (selectedCategory === 'Category'){
         const boardOptions = ["P1", "P2", "T1", "T2", "Vx","Vz","Ct","Vt"];
         for (let i = 0; i <= 7; i++) {
           const li = document.createElement('li');
@@ -369,15 +452,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           menu4.appendChild(li);
         }
         selected4.innerText = 'P1';
-        dropdown5.classList.remove('hidden');
+        dropdown5.classList.add('hidden');
       }
       // Re-apply the event listeners for the newly added options
-      setupDropdownEventListeners("drop4");
-      setupDropdownEventListeners('drop5');
+      setupDropdownEventListeners("drop4",oven);
+      setupDropdownEventListeners('drop5',oven);
     };
 
-    const updateDrop5Options = (ovenId) => {
-      const maxBoards = maxBoardsPerOven[ovenId] || 1; // Default to 1 if ovenId not found
+    const updateDrop5Options = (oven) => {
+      const maxBoards = maxBoardsPerOven[oven.name] || 1; // Default to 1 if ovenId not found
       menu5.innerHTML = '';
       for (let i = 1; i <= maxBoards; i++) {
         const li = document.createElement('li');
@@ -388,17 +471,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       selected5.innerText = '1';
       // Re-apply the event listeners for the newly added options
-      setupDropdownEventListeners("drop5");
+      setupDropdownEventListeners("drop5",oven);
     };
 
     dropdown3.querySelectorAll('.menu li').forEach(option3 => {
       option3.addEventListener("click", () => {
         updateDrop4Options(option3.dataset.category);
-        setupDropdownEventListeners("drop4");
+        setupDropdownEventListeners("drop4",oven);
       });
     });
-
-    updateDrop5Options(document.querySelector(".selected-list").firstChild.innerHTML);
+    updateDrop5Options(oven);
 
   }
 
@@ -466,9 +548,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderOvens(ovens);
     } else if (message.type === 'newOvenData') {
       console.log('New oven data:', message.data);
-      if (selectedOven && selectedOven.dataset.id === message.data.ovenId) {
+      console.log(document.querySelector('.selected-list').firstChild.innerHTML);
+      console.log(message.data.ovenId);
+      currentOven = document.querySelector('.selected-list').firstChild.innerHTML;
+      currentType = document.querySelectorAll('.selected')[1].innerHTML;
+      currentOption = document.querySelectorAll('.selected')[2].innerHTML;
+      currentBoard = document.querySelectorAll('.selected')[3].innerHTML;
+      if (currentOven && currentOven === message.data.ovenId) {
         chartData.push(message.data);
-        updateChartData(chartData, message.data.dataType, message.data.option, message.data.boardNum);
+        updateChartData(chartData, currentType, currentOption, currentBoard);
       }
     }
   });

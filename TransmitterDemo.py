@@ -32,7 +32,7 @@ def generate_board_data(oven_name):
         "ct": random.uniform(20, 60),
         "vt": random.uniform(20, 60),
         "dataType": "Board",
-        "boardId": f"{random.randint(1, 7)}",  # Example boardId
+        "boardId": f"{random.randint(1, 5)}",  # Example boardId
         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
     }
 
