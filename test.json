@@ -1,0 +1,21 @@
+{
+    "ovenId": "60d5f5a5d4a3c9b6f8d4b601",
+    "temperature": 200,
+    "dataType": "Oven"
+  },
+
+
+{
+"ovenId": "60d5f5a5d4a3c9b6f8d4b601",
+"temperature": 200,
+"p1": 30,
+"p2": 50,
+"t1": 30,
+"t2": 50,
+"vx": 30,
+"vz": 50,
+"ct": 30,
+"vt": 50,
+"dataType": "Board",
+"boardId": "Board123"
+}

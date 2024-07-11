@@ -3,6 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
 const mongoose = require('mongoose');
+const OvenData = require('./models/OvenData'); // Import the OvenData model
 
 const app = express();
 const server = http.createServer(app);
@@ -32,27 +33,47 @@ const ovenSchema = new mongoose.Schema({
 
 const Oven = mongoose.model('Ovens', ovenSchema);
 
-let latestData = '';
-
+// Server-side WebSocket handling
 wss.on('connection', ws => {
   console.log('Client connected');
   ws.on('message', async message => {
     console.log('Received: %s', message);
-    latestData = message;
 
     // Parse the incoming message (assuming it's in JSON format)
     const parsedData = JSON.parse(message);
 
-    // Here you can handle the data coming from WebSocket
-    // For example, saving the data to the database (this would be a different collection)
-    // const newData = new OvenData({
-    //   ovenId: parsedData.ovenId,
-    //   data: parsedData.data,
-    //   timestamp: new Date(),
-    // });
-    // await newData.save();
+    // Save the data to the database
+    const newData = new OvenData({
+      ovenId: parsedData.data.ovenId,
+      temperature: parsedData.data.temperature,
+      p1: parsedData.data.p1,
+      p2: parsedData.data.p2,
+      t1: parsedData.data.t1,
+      t2: parsedData.data.t2,
+      vx: parsedData.data.vx,
+      vz: parsedData.data.vz,
+      ct: parsedData.data.ct,
+      vt: parsedData.data.vt,
+      dataType: parsedData.data.dataType,
+      boardId: parsedData.data.boardId,
+      timestamp: parsedData.data.timestamp ? new Date(parsedData.data.timestamp) : new Date()
+    });
+
+    try {
+      await newData.save();
+      // Broadcast to all connected WebSocket clients
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          console.log('Broadcasting message to client:', JSON.stringify({ type: 'newOvenData', data: newData }));
+          client.send(JSON.stringify({ type: 'newOvenData', data: newData }));
+        }
+      });
+    } catch (err) {
+      console.error('Error saving data:', err.message);
+    }
   });
 });
+
 
 // Serve static files from the 'views' directory
 app.use(express.static(path.join(__dirname, 'views')));
@@ -67,7 +88,7 @@ app.get('/devices', (req, res) => {
 });
 
 app.get('/data', (req, res) => {
-  res.send(latestData);
+  res.send('WebSocket server running');
 });
 
 // RESTful routes for managing ovens
@@ -135,6 +156,40 @@ app.delete('/ovens/:id', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+// Add oven data
+app.post('/ovenData', async (req, res) => {
+  const newOvenData = new OvenData(req.body);
+  try {
+    await newOvenData.save();
+    res.status(201).json(newOvenData);
+    
+    // Broadcast to all connected WebSocket clients
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'newOvenData', data: newOvenData }));
+      }
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get data for a specific oven with type and option
+app.get('/ovenData/:ovenId', async (req, res) => {
+  const { type, option, boardNum } = req.query;
+  try {
+    let filter = { ovenId: req.params.ovenId };
+    if (type === 'Board' && option) {
+      filter.boardId = boardNum; // Assuming board data is identified by boardId
+    }
+    const ovenData = await OvenData.find(filter);
+    res.json(ovenData);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Bind the server to 0.0.0.0 and port 3000
 const PORT = 3000;
