@@ -33,6 +33,19 @@ const ovenSchema = new mongoose.Schema({
 
 const Oven = mongoose.model('Ovens', ovenSchema);
 
+function formatTimestampLong(timestamp) {
+  const date = new Date(timestamp);
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  };
+  return date.toLocaleString('en-US', options);
+}
+
 // Server-side WebSocket handling
 wss.on('connection', ws => {
   console.log('Client connected');
@@ -41,6 +54,9 @@ wss.on('connection', ws => {
 
     // Parse the incoming message (assuming it's in JSON format)
     const parsedData = JSON.parse(message);
+
+    // Format the timestamp before saving
+    const formattedTimestamp = parsedData.data.timestamp ? formatTimestampLong(parsedData.data.timestamp) : formatTimestampLong(new Date());
 
     // Save the data to the database
     const newData = new OvenData({
@@ -56,7 +72,7 @@ wss.on('connection', ws => {
       vt: parsedData.data.vt,
       dataType: parsedData.data.dataType,
       boardId: parsedData.data.boardId,
-      timestamp: parsedData.data.timestamp ? new Date(parsedData.data.timestamp) : new Date()
+      timestamp: formattedTimestamp
     });
 
     try {
@@ -73,7 +89,6 @@ wss.on('connection', ws => {
     }
   });
 });
-
 
 // Serve static files from the 'views' directory
 app.use(express.static(path.join(__dirname, 'views')));
@@ -159,7 +174,8 @@ app.delete('/ovens/:id', async (req, res) => {
 
 // Add oven data
 app.post('/ovenData', async (req, res) => {
-  const newOvenData = new OvenData(req.body);
+  const formattedTimestamp = req.body.timestamp ? formatTimestampLong(req.body.timestamp) : formatTimestampLong(new Date());
+  const newOvenData = new OvenData({ ...req.body, timestamp: formattedTimestamp });
   try {
     await newOvenData.save();
     res.status(201).json(newOvenData);
@@ -184,12 +200,11 @@ app.get('/ovenData/:ovenId', async (req, res) => {
       filter.boardId = boardNum; // Assuming board data is identified by boardId
     }
     const ovenData = await OvenData.find(filter);
-    res.json(ovenData);
+    res.json(ovenData.reverse());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // Bind the server to 0.0.0.0 and port 3000
 const PORT = 3000;

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time Chart with Plotly.js</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1em 0;
+            font-size: 1.5em;
+        }
+        .wrapper {
+            width: 80%;
+            max-width: 800px;
+        }
+        #chart {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar"><span>Real-Time Chart with Plotly.js</span></div>
+    <div class="wrapper">
+        <div id="chart"></div>
+        <script>
+            function getData() {
+                return Math.random();
+            }
+
+            // Initialize the chart with the first data point
+            Plotly.plot('chart', [{
+                y: [getData()],
+                type: 'scattergl', // Use WebGL for better performance
+                mode: 'lines',
+            }], {
+                xaxis: { title: 'Time', uirevision: 'true' }, // Maintain user zoom/pan state
+                yaxis: { title: 'Value', uirevision: 'true' } // Maintain user zoom/pan state
+            });
+
+            var cnt = 0;
+            var intervalId = setInterval(function () {
+                // Extend the trace with new data
+                Plotly.extendTraces('chart', { y: [[getData()]] }, [0]);
+                cnt++;
+                if (cnt > 500) {
+                    // Adjust the x-axis range to create the sliding effect
+                    Plotly.relayout('chart', {
+                        'xaxis.range': [cnt - 500, cnt]
+                    });
+                }
+            }, 15);
+
+            // Store the current x-axis range and update interval
+            var currentXRange = [0, 500];
+            var updateInterval = 15;
+
+            // Listen for user interactions (panning and zooming)
+            document.getElementById('chart').on('plotly_relayout', function (eventData) {
+                if (eventData['xaxis.range[0]'] !== undefined && eventData['xaxis.range[1]'] !== undefined) {
+                    // Update the stored x-axis range
+                    currentXRange = [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']];
+                }
+
+                // If panning or zooming, stop the sliding effect
+                if (eventData['xaxis.range[0]'] < cnt - 500) {
+                    clearInterval(intervalId);
+                }
+            });
+
+            // Continue the sliding effect if user pans back to the end
+            setInterval(function () {
+                if (currentXRange[1] >= cnt) {
+                    intervalId = setInterval(function () {
+                        Plotly.extendTraces('chart', { y: [[getData()]] }, [0]);
+                        cnt++;
+                    }, updateInterval);
+                }
+            }, updateInterval);
+        </script>
+    </div>
+</body>
+</html>

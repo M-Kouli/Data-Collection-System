@@ -50,4 +50,4 @@ while True:
         else:
             data = generate_board_data(oven)
         send_websocket_notification(data)
-    time.sleep(5)  # Wait for 5 seconds before sending the next batch of data
+    time.sleep(1)  # Wait for 5 seconds before sending the next batch of data
