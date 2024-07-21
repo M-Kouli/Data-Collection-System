@@ -69,15 +69,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   //   return date.toLocaleDateString('en-US', options);
   // }
 
-  function formatTimestampShort(timestamp) {
-    const date = new Date(timestamp);
-    const options = {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    };
-    return date.toLocaleTimeString('en-US', options);
-  }
+  // function formatTimestampShort(timestamp) {
+  //   const date = new Date(timestamp);
+  //   const options = {
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //     second: '2-digit',
+  //   };
+  //   return date.toLocaleTimeString('en-US', options);
+  // }
   
 
 // Function to update the chart data and title
@@ -93,14 +93,14 @@ function updateChartData(newData, type, option, boardNum = null) {
     const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
     const controlLimits = {
       temperature: { upper: 255, lower: 145 },
-      p1: { upper: 15, lower: 65 },
-      p2: { upper: 15, lower: 65},
-      t1: { upper: 15, lower: 65 },
-      t2: { upper: 15, lower: 65 },
-      vx: { upper: 15, lower: 65},
-      vz: { upper: 15, lower: 65},
-      ct: { upper: 15, lower: 65},
-      vt: { upper: 15, lower: 65},
+      p1: { upper: 65, lower: 15 },
+      p2: { upper: 65, lower: 15 },
+      t1: { upper: 65, lower: 15 },
+      t2: { upper: 65, lower: 15 },
+      vx: { upper: 65, lower: 15 },
+      vz: { upper: 65, lower: 15 },
+      ct: { upper: 65, lower: 15 },
+      vt: { upper: 65, lower: 15 },
       // Add more options and their control limits here
     };
     // Compute the maximum index from all boards
@@ -131,7 +131,8 @@ function updateChartData(newData, type, option, boardNum = null) {
       y: Array(maxIndex).fill(upperControlLimit),
       mode: 'lines',
       name: 'Upper Control Limit',
-      line: { dash: 'dash', color: 'red' }
+      line: { dash: 'dash', color: 'red' },
+      hoverinfo: 'y'
     };
 
     const lowerControlTrace = {
@@ -139,11 +140,12 @@ function updateChartData(newData, type, option, boardNum = null) {
       y: Array(maxIndex).fill(lowerControlLimit),
       mode: 'lines',
       name: 'Lower Control Limit',
-      line: { dash: 'dash', color: 'blue' }
+      line: { dash: 'dash', color: 'blue' },
+      hoverinfo: 'y'
     };
 
     const layout = {
-      title: 'Category P1 Over Time',
+      title: `Category ${option} Over Time`,
       uirevision: 'true',
       xaxis: {
         title: 'Index',
@@ -151,7 +153,8 @@ function updateChartData(newData, type, option, boardNum = null) {
         dtick: 1,
       },
       yaxis: {
-        title: 'P1'
+        title: option,
+        autorange: true,
       },
       xaxis:{
         range: [boardNumbers.length-(boardNumbers.length-25),boardNumbers.length-boardNumbers.length], // Set initial range dynamically
@@ -173,6 +176,20 @@ function updateChartData(newData, type, option, boardNum = null) {
         name: opt.toUpperCase(), // Use the original option for the name
         connectgaps: true
       }));
+      // Add temperature trace using secondary y-axis
+      const temperatureTrace = {
+        x: newData.map(d => d.timestamp),
+        y: newData.map(d => d.temperature),
+        mode: 'lines',
+        name: 'Oven Temp',
+        yaxis: 'y2',
+        line: {
+          color: 'red'
+        }
+      };
+
+      // Add temperature trace to traces array
+      traces.push(temperatureTrace);
 
       const layout = {
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
@@ -183,10 +200,17 @@ function updateChartData(newData, type, option, boardNum = null) {
           dtick: 1,
         },
         yaxis: {
-          title: 'Metrics' // Adjust this field based on your data
+          title: 'Metrics', // Adjust this field based on your data
+          autorange: true,
+          side: 'left'
         },
         xaxis:{
           range: [newData.length-(newData.length-25),newData.length-newData.length], // Set initial range dynamically
+        },
+        yaxis2: {
+          title: 'Temperature',
+          overlaying: 'y',
+          side: 'right'
         }
       };
 
@@ -194,14 +218,14 @@ function updateChartData(newData, type, option, boardNum = null) {
     } else {
       const controlLimits = {
         temperature: { upper: 255, lower: 145 },
-        p1: { upper: 15, lower: 65 },
-        p2: { upper: 15, lower: 65},
-        t1: { upper: 15, lower: 65 },
-        t2: { upper: 15, lower: 65 },
-        vx: { upper: 15, lower: 65},
-        vz: { upper: 15, lower: 65},
-        ct: { upper: 15, lower: 65},
-        vt: { upper: 15, lower: 65},
+        p1: { upper: 65, lower: 15 },
+        p2: { upper: 65, lower: 15},
+        t1: { upper: 65, lower: 15 },
+        t2: { upper: 65, lower: 15 },
+        vx: { upper: 65, lower: 15},
+        vz: { upper: 65, lower: 15},
+        ct: { upper: 65, lower: 15},
+        vt: { upper: 65, lower: 15},
         // Add more options and their control limits here
       };
       
@@ -250,7 +274,8 @@ function updateChartData(newData, type, option, boardNum = null) {
           dtick: 1,
         },
         yaxis: {
-          title: option // Adjust this field based on your data
+          title: option, // Adjust this field based on your data
+          autorange: true,
         },
         xaxis:{
           range: [filteredData.length-(filteredData.length-25),filteredData.length-filteredData.length], // Set initial range dynamically
@@ -548,7 +573,7 @@ function updateChartData(newData, type, option, boardNum = null) {
         dropdown5.classList.add('hidden');
       } else if (selectedCategory === 'Board') {
         const boardOptions = ["All","P1", "P2", "T1", "T2", "Vx","Vz","Ct","Vt"];
-        for (let i = 0; i <= 7; i++) {
+        for (let i = 0; i <= 8; i++) {
           const li = document.createElement('li');
           li.textContent = boardOptions[i];
           li.dataset.category = boardOptions[i];
@@ -665,11 +690,15 @@ function updateChartData(newData, type, option, boardNum = null) {
       currentOven = document.querySelector('.selected-list').firstChild.innerHTML;
       currentType = document.querySelectorAll('.selected')[1].innerHTML;
       currentOption = document.querySelectorAll('.selected')[2].innerHTML;
-      currentBoard = document.querySelectorAll('.selected')[3].innerHTML;
+      currentBoard = document.querySelectorAll('.selected')[3]?.innerHTML;
       if (currentOven && currentOven === message.data.ovenId) {
-        chartData.unshift(message.data)
-        updateChartData(chartData, currentType, currentOption, currentBoard);
-      }
+          if(currentType === 'Board' && currentBoard && currentBoard !== message.data.boardId){
+            console.log(`skipping data for board ${message.data.boardId} as it does not match the current board ${currentBoard}`)
+            return
+          }
+          chartData.unshift(message.data)
+          updateChartData(chartData, currentType, currentOption, currentBoard);
+        }
     }
   });
 });
