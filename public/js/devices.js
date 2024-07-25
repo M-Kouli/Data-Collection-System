@@ -8,6 +8,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   let ovens = [];
   let selectedOven = null;
   let chartData = [];
+  let tempData = {
+    "Gollum": 0,
+    "Treebeard": 0,
+    "Gimli": 0,
+    "Saruman": 0,
+    "Galadriel": 0,
+    "Peregrin": 0,
+    "Frodo": 0
+  };
 
   // Assume this information is known or fetched from the server
   const maxBoardsPerOven = {
@@ -33,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const layout = {
       title: title,
-      uirevision:'true',
+      uirevision: 'true',
       xaxis: {
         title: 'Time',
         type: 'category',
@@ -56,236 +65,211 @@ document.addEventListener('DOMContentLoaded', async () => {
     plotlyChart = document.getElementById('myPlotlyChart');
   }
 
-  // function formatTimestampLong(timestamp) {
-  //   const date = new Date(timestamp);
-  //   const options = {
-  //     year: 'numeric',
-  //     month: 'short',
-  //     day: '2-digit',
-  //     hour: '2-digit',
-  //     minute: '2-digit',
-  //     second: '2-digit',
-  //   };
-  //   return date.toLocaleDateString('en-US', options);
-  // }
+  // Function to update the chart data and title
+  function updateChartData(newData, type, option, boardNum = null) {
+    chartData = newData;
+    console.log(option);
 
-  // function formatTimestampShort(timestamp) {
-  //   const date = new Date(timestamp);
-  //   const options = {
-  //     hour: '2-digit',
-  //     minute: '2-digit',
-  //     second: '2-digit',
-  //   };
-  //   return date.toLocaleTimeString('en-US', options);
-  // }
-  
+    if (type === 'Category') {
+      // Get unique board numbers from the data, filter out undefined, and sort in ascending order
+      let boardNumbers = [...new Set(newData.map(d => d.boardId))].filter(b => b !== undefined).sort((a, b) => a - b);
+      console.log(boardNumbers);
 
-// Function to update the chart data and title
-function updateChartData(newData, type, option, boardNum = null) {
-  chartData = newData;
-  console.log(option);
-
-  if (type === 'Category') {
-    // Get unique board numbers from the data, filter out undefined, and sort in ascending order
-    let boardNumbers = [...new Set(newData.map(d => d.boardId))].filter(b => b !== undefined).sort((a, b) => a - b);
-    console.log(boardNumbers);
-
-    const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
-    const controlLimits = {
-      temperature: { upper: 255, lower: 145 },
-      p1: { upper: 65, lower: 15 },
-      p2: { upper: 65, lower: 15 },
-      t1: { upper: 65, lower: 15 },
-      t2: { upper: 65, lower: 15 },
-      vx: { upper: 65, lower: 15 },
-      vz: { upper: 65, lower: 15 },
-      ct: { upper: 65, lower: 15 },
-      vt: { upper: 65, lower: 15 },
-      // Add more options and their control limits here
-    };
-    // Compute the maximum index from all boards
-    let maxIndex = 0;
-    const upperControlLimit = controlLimits[normalizedOption]?.upper || 255; // Default to 255 if not found
-    const lowerControlLimit = controlLimits[normalizedOption]?.lower || 145; // Default to 145 if not found
-    // Create traces for each board number
-    const traces = boardNumbers.map(boardId => {
-      const boardData = newData.filter(d => d.boardId === boardId && d[normalizedOption] !== undefined);
-      if (boardData.length > maxIndex) {
-        maxIndex = boardData.length;
-      }
-      return {
-        x: boardData.map((_, index) => index), // Use index as x value
-        y: boardData.map(d => d[normalizedOption]), // Display P1 values on the y-axis
-        mode: 'lines',
-        name: `Board ${boardId}`, // Use the board number for the trace name
-        text: boardData.map(d => d.timestamp), // Add timestamps for hover info
-        hoverinfo: 'y+text', // Display x, y, and timestamp on hover
-        connectgaps: true
-      };
-    });
-
-    // Create control limit traces using maxIndex
-    const indexRange = Array.from({ length: maxIndex }, (_, index) => index);
-    const upperControlTrace = {
-      x: indexRange,
-      y: Array(maxIndex).fill(upperControlLimit),
-      mode: 'lines',
-      name: 'Upper Control Limit',
-      line: { dash: 'dash', color: 'red' },
-      hoverinfo: 'y'
-    };
-
-    const lowerControlTrace = {
-      x: indexRange,
-      y: Array(maxIndex).fill(lowerControlLimit),
-      mode: 'lines',
-      name: 'Lower Control Limit',
-      line: { dash: 'dash', color: 'blue' },
-      hoverinfo: 'y'
-    };
-
-    const layout = {
-      title: `Category ${option} Over Time`,
-      uirevision: 'true',
-      xaxis: {
-        title: 'Index',
-        type: 'category',
-        dtick: 1,
-      },
-      yaxis: {
-        title: option,
-        autorange: true,
-      },
-      xaxis:{
-        range: [boardNumbers.length-(boardNumbers.length-25),boardNumbers.length-boardNumbers.length], // Set initial range dynamically
-      }
-    };
-    // Combine all traces into a single array
-    const allTraces = [...traces, upperControlTrace, lowerControlTrace];
-    Plotly.react(plotlyChart, allTraces, layout);
-  } else {
-    const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
-    if (option === 'All') {
-      const boardOptions = ["p1", "p2", "t1", "t2", "vx", "vz", "ct", "vt"];
-      // Set the timestamp on the x-axis, and all the data plotted as lines
-      // With the legend on the side to control
-      const traces = boardOptions.map(opt => ({
-        x: newData.filter(d => d[opt] !== undefined).map(d => d.timestamp),
-        y: newData.filter(d => d[opt] !== undefined).map(d => d[opt]), // Use the normalized option to map y values
-        mode: 'lines',
-        name: opt.toUpperCase(), // Use the original option for the name
-        connectgaps: true
-      }));
-      // Add temperature trace using secondary y-axis
-      const temperatureTrace = {
-        x: newData.map(d => d.timestamp),
-        y: newData.map(d => d.temperature),
-        mode: 'lines',
-        name: 'Oven Temp',
-        yaxis: 'y2',
-        line: {
-          color: 'red'
-        }
-      };
-
-      // Add temperature trace to traces array
-      traces.push(temperatureTrace);
-
-      const layout = {
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
-        uirevision: 'true',
-        xaxis: {
-          title: 'Time',
-          type: 'category',
-          dtick: 1,
-        },
-        yaxis: {
-          title: 'Metrics', // Adjust this field based on your data
-          autorange: true,
-          side: 'left'
-        },
-        xaxis:{
-          range: [newData.length-(newData.length-25),newData.length-newData.length], // Set initial range dynamically
-        },
-        yaxis2: {
-          title: 'Temperature',
-          overlaying: 'y',
-          side: 'right'
-        }
-      };
-
-      Plotly.react(plotlyChart, traces, layout);
-    } else {
+      const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
       const controlLimits = {
         temperature: { upper: 255, lower: 145 },
         p1: { upper: 65, lower: 15 },
-        p2: { upper: 65, lower: 15},
+        p2: { upper: 65, lower: 15 },
         t1: { upper: 65, lower: 15 },
         t2: { upper: 65, lower: 15 },
-        vx: { upper: 65, lower: 15},
-        vz: { upper: 65, lower: 15},
-        ct: { upper: 65, lower: 15},
-        vt: { upper: 65, lower: 15},
+        vx: { upper: 65, lower: 15 },
+        vz: { upper: 65, lower: 15 },
+        ct: { upper: 65, lower: 15 },
+        vt: { upper: 65, lower: 15 },
         // Add more options and their control limits here
       };
-      
+      // Compute the maximum index from all boards
+      let maxIndex = 0;
       const upperControlLimit = controlLimits[normalizedOption]?.upper || 255; // Default to 255 if not found
       const lowerControlLimit = controlLimits[normalizedOption]?.lower || 145; // Default to 145 if not found
-      console.log(chartData)
-      const filteredData = chartData.filter(d => d[normalizedOption] !== undefined);
-      const trace = {
-        x: filteredData.map(d => d.timestamp),
-        y: filteredData.map(d => d[normalizedOption]), // Use the normalized option to map y values
-        mode: 'lines',
-        name: option, // Use the original option for the name
-        connectgaps: true
-      };
+      // Create traces for each board number
+      const traces = boardNumbers.map(boardId => {
+        const boardData = newData.filter(d => d.boardId === boardId && d[normalizedOption] !== undefined);
+        if (boardData.length > maxIndex) {
+          maxIndex = boardData.length;
+        }
+        return {
+          x: boardData.map((_, index) => index), // Use index as x value
+          y: boardData.map(d => d[normalizedOption]), // Display P1 values on the y-axis
+          mode: 'lines',
+          name: `Board ${boardId}`, // Use the board number for the trace name
+          text: boardData.map(d => d.timestamp), // Add timestamps for hover info
+          hoverinfo: 'y+text', // Display x, y, and timestamp on hover
+          connectgaps: true
+        };
+      });
 
-      // Upper control limit trace
+      // Create control limit traces using maxIndex
+      const indexRange = Array.from({ length: maxIndex }, (_, index) => index);
       const upperControlTrace = {
-        x: filteredData.map(d => d.timestamp),
-        y: new Array(filteredData.length).fill(upperControlLimit), // Fill array with upper control limit value
+        x: indexRange,
+        y: Array(maxIndex).fill(upperControlLimit),
         mode: 'lines',
         name: 'Upper Control Limit',
-        line: {
-          dash: 'dash',
-          color: 'red'
-        }
+        line: { dash: 'dash', color: 'red' },
+        hoverinfo: 'y'
       };
 
-      // Lower control limit trace
       const lowerControlTrace = {
-        x: filteredData.map(d => d.timestamp),
-        y: new Array(filteredData.length).fill(lowerControlLimit), // Fill array with lower control limit value
+        x: indexRange,
+        y: Array(maxIndex).fill(lowerControlLimit),
         mode: 'lines',
         name: 'Lower Control Limit',
-        line: {
-          dash: 'dash',
-          color: 'blue'
-        }
+        line: { dash: 'dash', color: 'blue' },
+        hoverinfo: 'y'
       };
 
       const layout = {
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
-        uirevision:'true',
+        title: `Category ${option} Over Time`,
+        uirevision: 'true',
         xaxis: {
-          title: 'Time',
+          title: 'Index',
           type: 'category',
           dtick: 1,
         },
         yaxis: {
-          title: option, // Adjust this field based on your data
+          title: option,
           autorange: true,
         },
         xaxis:{
-          range: [filteredData.length-(filteredData.length-25),filteredData.length-filteredData.length], // Set initial range dynamically
+          range: [boardNumbers.length-(boardNumbers.length-25),boardNumbers.length-boardNumbers.length], // Set initial range dynamically
         }
       };
+      // Combine all traces into a single array
+      const allTraces = [...traces, upperControlTrace, lowerControlTrace];
+      Plotly.react(plotlyChart, allTraces, layout);
+    } else {
+      const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
+      if (option === 'All') {
+        const boardOptions = ["p1", "p2", "t1", "t2", "vx", "vz", "ct", "vt"];
+        // Set the timestamp on the x-axis, and all the data plotted as lines
+        // With the legend on the side to control
+        const traces = boardOptions.map(opt => ({
+          x: newData.filter(d => d[opt] !== undefined).map(d => d.timestamp),
+          y: newData.filter(d => d[opt] !== undefined).map(d => d[opt]), // Use the normalized option to map y values
+          mode: 'lines',
+          name: opt.toUpperCase(), // Use the original option for the name
+          connectgaps: true
+        }));
+        // Add temperature trace using secondary y-axis
+        const temperatureTrace = {
+          x: newData.map(d => d.timestamp),
+          y: newData.map(d => d.temperature),
+          mode: 'lines',
+          name: 'Oven Temp',
+          yaxis: 'y2',
+          line: {
+            color: 'red'
+          }
+        };
 
-      Plotly.react(plotlyChart, [trace,upperControlTrace,lowerControlTrace], layout);
+        // Add temperature trace to traces array
+        traces.push(temperatureTrace);
+
+        const layout = {
+          title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
+          uirevision: 'true',
+          xaxis: {
+            title: 'Time',
+            type: 'category',
+            dtick: 1,
+          },
+          yaxis: {
+            title: 'Metrics', // Adjust this field based on your data
+            autorange: true,
+            side: 'left'
+          },
+          xaxis:{
+            range: [newData.length-(newData.length-25),newData.length-newData.length], // Set initial range dynamically
+          },
+          yaxis2: {
+            title: 'Temperature',
+            overlaying: 'y',
+            side: 'right'
+          }
+        };
+
+        Plotly.react(plotlyChart, traces, layout);
+      } else {
+        console.log(chartData)
+        const controlLimits = {
+          temperature: { value: 10},
+          p1: { value: 50},
+          p2: { value: 50},
+          t1: { value: 50},
+          t2: { value: 50},
+          vx: { value: 50},
+          vz: { value: 50},
+          ct: { value: 50},
+          vt: { value: 50},
+        }
+        const filteredData = chartData.filter(d => d[normalizedOption] !== undefined);
+        const trace = {
+          x: filteredData.map(d => d.timestamp),
+          y: filteredData.map(d => d[normalizedOption]), // Use the normalized option to map y values
+          mode: 'lines',
+          name: option, // Use the original option for the name
+          connectgaps: true
+        };
+
+          // Upper control limit trace
+          const upperControlTrace = {
+            x: filteredData.map(d => d.timestamp),
+            y: filteredData.map(d => d[normalizedOption+'UpperControlLimit']), // Use the received upper control limit
+            mode: 'lines',
+            name: 'Upper Control Limit',
+            line: {
+              dash: 'dash',
+              color: 'red'
+            }
+          };
+          console.log(normalizedOption+'LowerControlLimit')
+          // Lower control limit trace
+          const lowerControlTrace = {
+            x: filteredData.map(d => d.timestamp),
+            y: filteredData.map(d => d[normalizedOption+'LowerControlLimit']), // Use the received lower control limit
+            mode: 'lines',
+            name: 'Lower Control Limit',
+            line: {
+              dash: 'dash',
+              color: 'blue'
+            }
+          };
+          // Calculate the y-axis range based on the first y value
+          const firstYValue = trace.y[0];
+          const yAxisRange = [firstYValue - controlLimits[normalizedOption].value, firstYValue + controlLimits[normalizedOption].value];
+        const layout = {
+          title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
+          uirevision:'true',
+          xaxis: {
+            title: 'Time',
+            type: 'category',
+            dtick: 1,
+          },
+          yaxis: {
+            title: option, // Adjust this field based on your data
+            autorange: false,
+            range: yAxisRange
+          },
+          xaxis:{
+            range: [filteredData.length-(filteredData.length-25),filteredData.length-filteredData.length], // Set initial range dynamically
+          }
+        };
+
+        Plotly.react(plotlyChart, [trace,upperControlTrace,lowerControlTrace], layout);
+      }
     }
   }
-}
 
   // Fetch oven data
   async function fetchOvens() {
@@ -317,6 +301,21 @@ function updateChartData(newData, type, option, boardNum = null) {
     }
   }
 
+  async function fetchOvenTemp(ovenId) {
+    try {
+      let url = `/ovenData/${ovenId}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      tempData[ovenId] = Math.trunc(data[0].temperature); // Initialize chartData with the fetched data
+      console.log(tempData);
+      document.getElementById(`temp-${ovenId}`).innerText = tempData[ovenId];
+      document.getElementById('main-temp').innerText = `${tempData[ovenId]}°C`;
+    } catch (error) {
+      console.error('Error fetching oven data:', error);
+    }
+  }
+
   // Render ovens to the DOM
   function renderOvens(ovens) {
     ovenContainer.innerHTML = '';
@@ -344,10 +343,11 @@ function updateChartData(newData, type, option, boardNum = null) {
 
       const usageDiv = document.createElement('div');
       usageDiv.classList.add('list-usage');
+      console.log(tempData[oven.name]);
       usageDiv.innerHTML = `
         <span>Oven Temperature</span>
         <div class="percent-display">
-          <h2><span>0</span> °C</h2>
+          <h2><span id="temp-${oven.name}">${tempData[oven.name]}</span> °C</h2>
           <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
             <span>up</span> from baseline
           </p>
@@ -391,7 +391,7 @@ function updateChartData(newData, type, option, boardNum = null) {
   }
 
   // Function to update the main view based on the selected tab
-  function updateMainView(oven) {
+  async function updateMainView(oven) {
     const activeTab = document.querySelector('.view-option.view-active').dataset.view;
     if (activeTab === 'Overview') {
       viewmain.innerHTML = `
@@ -413,7 +413,7 @@ function updateChartData(newData, type, option, boardNum = null) {
           <div class="main-sec1-header">
             <div class="main-sec1-cards view-active">
               <p>Oven Temperature</p>
-              <h1>0.0 °C</h1>
+              <h1 id="main-temp">${tempData[oven.name]}°C</h1>
               <div>
                 <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
               </div>
@@ -443,6 +443,8 @@ function updateChartData(newData, type, option, boardNum = null) {
           <div class="main-sec1-body"></div>
         </div>
       `;
+      fetchOvenTemp(oven.name !== undefined ? oven.name : oven.firstChild.innerHTML)
+
       setupDropdownEventListeners('drop2',oven);
     } else if (activeTab === 'Tool Monitoring') {
       viewmain.innerHTML = `
@@ -506,6 +508,7 @@ function updateChartData(newData, type, option, boardNum = null) {
     } else {
       viewmain.innerHTML = `<h2>OTHER CONTENT</h2>`;
     }
+    console.log(chartData)
   }
 
   // Function to set up event listeners for the dropdown
@@ -688,17 +691,28 @@ function updateChartData(newData, type, option, boardNum = null) {
       console.log(document.querySelector('.selected-list').firstChild.innerHTML);
       console.log(message.data.ovenId);
       currentOven = document.querySelector('.selected-list').firstChild.innerHTML;
-      currentType = document.querySelectorAll('.selected')[1].innerHTML;
-      currentOption = document.querySelectorAll('.selected')[2].innerHTML;
-      currentBoard = document.querySelectorAll('.selected')[3]?.innerHTML;
-      if (currentOven && currentOven === message.data.ovenId) {
+      currentTab = document.querySelector('.view-active').innerHTML
+      if (currentTab === 'Overview') {
+        tempData[currentOven] = Math.trunc(message.data.temperature);
+        document.getElementById(`temp-${currentOven}`).innerText = tempData[currentOven];
+        document.getElementById('main-temp').innerText = `${tempData[currentOven]}°C`;
+      }
+      else{
+        currentType = document.querySelector('#drop3').childNodes[1].firstElementChild.innerHTML;
+        currentOption = document.querySelector('#drop4').childNodes[1].firstElementChild.innerHTML;
+        currentBoard = document.querySelectorAll('.selected')[3]?.innerHTML;
+        if (currentOven && currentOven === message.data.ovenId) {
           if(currentType === 'Board' && currentBoard && currentBoard !== message.data.boardId){
             console.log(`skipping data for board ${message.data.boardId} as it does not match the current board ${currentBoard}`)
             return
           }
-          chartData.unshift(message.data)
+          chartData.unshift(message.data);
+          tempData[currentOven] = Math.trunc(message.data.temperature);
+          document.getElementById(`temp-${currentOven}`).innerText = tempData[currentOven];
           updateChartData(chartData, currentType, currentOption, currentBoard);
         }
+      }
+
     }
   });
 });

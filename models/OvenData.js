@@ -1,20 +1,37 @@
 const mongoose = require('mongoose');
 
 const ovenDataSchema = new mongoose.Schema({
-  ovenId: { type: String, required: true }, // Changed to String
+  ovenId: { type: String, required: true },
   timestamp: { type: String, required: true },
-  temperature: Number,
+  temperature: { type: Number, required: true },
+  temperatureUpperControlLimit: { type: Number, required: true },
+  temperatureLowerControlLimit: { type: Number, required: true },
   dataType: { type: String, enum: ['Oven', 'Board'], required: true },
   boardId: { type: String, required: function() { return this.dataType === 'Board'; } },
   p1: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  p1UpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  p1LowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   p2: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  p2UpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  p2LowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   t1: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  t1UpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  t1LowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   t2: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  t2UpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  t2LowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   vx: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vxUpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vxLowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   vz: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vzUpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vzLowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
   ct: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  vt: { type: Number, required: function() { return this.dataType === 'Board'; } }
+  ctUpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  ctLowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vt: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vtUpperControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
+  vtLowerControlLimit: { type: Number, required: function() { return this.dataType === 'Board'; } },
 });
-
 
 module.exports = mongoose.model('OvenData', ovenDataSchema);

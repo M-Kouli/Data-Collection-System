@@ -21,8 +21,9 @@ mongoose.connect('mongodb://localhost:27017/OvenMonitoring', {
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => {
+db.once('open', async () => {
   console.log('Connected to MongoDB');
+  await createOvenCollections(); // Ensure collections are created
 });
 
 // Define Oven schema
@@ -32,6 +33,24 @@ const ovenSchema = new mongoose.Schema({
 });
 
 const Oven = mongoose.model('Ovens', ovenSchema);
+
+// Function to create collections for each oven
+async function createOvenCollections() {
+  const ovens = await Oven.find();
+  const collectionNames = await mongoose.connection.db.listCollections().toArray();
+  const existingCollections = collectionNames.map(col => col.name);
+
+  for (const oven of ovens) {
+    const collectionName = oven.name;
+
+    if (!existingCollections.includes(collectionName)) {
+      console.log(`Creating collection for ${collectionName}`);
+      await mongoose.connection.createCollection(collectionName);
+    } else {
+      console.log(`Collection for ${collectionName} already exists`);
+    }
+  }
+}
 
 function formatTimestampLong(timestamp) {
   const date = new Date(timestamp);
@@ -62,14 +81,32 @@ wss.on('connection', ws => {
     const newData = new OvenData({
       ovenId: parsedData.data.ovenId,
       temperature: parsedData.data.temperature,
+      temperatureUpperControlLimit: parsedData.data.upperControlLimit,
+      temperatureLowerControlLimit: parsedData.data.lowerControlLimit,
       p1: parsedData.data.p1,
+      p1UpperControlLimit: parsedData.data.p1UpperControlLimit,
+      p1LowerControlLimit: parsedData.data.p1LowerControlLimit,
       p2: parsedData.data.p2,
+      p2UpperControlLimit: parsedData.data.p2UpperControlLimit,
+      p2LowerControlLimit: parsedData.data.p2LowerControlLimit,
       t1: parsedData.data.t1,
+      t1UpperControlLimit: parsedData.data.t1UpperControlLimit,
+      t1LowerControlLimit: parsedData.data.t1LowerControlLimit,
       t2: parsedData.data.t2,
+      t2UpperControlLimit: parsedData.data.t2UpperControlLimit,
+      t2LowerControlLimit: parsedData.data.t2LowerControlLimit,
       vx: parsedData.data.vx,
+      vxUpperControlLimit: parsedData.data.vxUpperControlLimit,
+      vxLowerControlLimit: parsedData.data.vxLowerControlLimit,
       vz: parsedData.data.vz,
+      vzUpperControlLimit: parsedData.data.vzUpperControlLimit,
+      vzLowerControlLimit: parsedData.data.vzLowerControlLimit,
       ct: parsedData.data.ct,
+      ctUpperControlLimit: parsedData.data.ctUpperControlLimit,
+      ctLowerControlLimit: parsedData.data.ctLowerControlLimit,
       vt: parsedData.data.vt,
+      vtUpperControlLimit: parsedData.data.vtUpperControlLimit,
+      vtLowerControlLimit: parsedData.data.vtLowerControlLimit,
       dataType: parsedData.data.dataType,
       boardId: parsedData.data.boardId,
       timestamp: formattedTimestamp
@@ -188,6 +225,17 @@ app.post('/ovenData', async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Get Temp for a specific oven
+app.get('/ovenTemp/:ovenId', async (req, res) => {
+  try {
+    let filter = { ovenId: req.params.ovenId };
+    const ovenData = await OvenData.find(filter);
+    res.json(ovenData.reverse());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
