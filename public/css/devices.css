@@ -193,7 +193,7 @@
 .dot {
     height: 0.55vw;
     width: 0.55vw;
-    background-color: green;
+    background-color: maroon;
     border-radius: 50%;
     display: block;
   }

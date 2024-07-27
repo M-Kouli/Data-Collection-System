@@ -8,15 +8,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   let ovens = [];
   let selectedOven = null;
   let chartData = [];
-  let tempData = {
-    "Gollum": 0,
-    "Treebeard": 0,
-    "Gimli": 0,
-    "Saruman": 0,
-    "Galadriel": 0,
-    "Peregrin": 0,
-    "Frodo": 0
-  };
+  let tempData = {};
+  let activeOvens = {};
+
 
   // Assume this information is known or fetched from the server
   const maxBoardsPerOven = {
@@ -335,7 +329,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const activityDiv = document.createElement('div');
       activityDiv.classList.add('list-activity');
-      activityDiv.innerHTML = '<span class="dot"></span><p>Active: </p><span>0s</span>';
+      activityDiv.setAttribute('id', `activity-${oven.name}`);
+      activityDiv.innerHTML = `<span class="dot"></span>
+                         <p>${activeOvens[oven.name]?.status || 'Disconnected:'}</p>
+                         <span>${activeOvens[oven.name]?.time || '0s'}</span>`;
 
       const tagsDiv = document.createElement('div');
       tagsDiv.classList.add('list-tags');
@@ -343,11 +340,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const usageDiv = document.createElement('div');
       usageDiv.classList.add('list-usage');
-      console.log(tempData[oven.name]);
       usageDiv.innerHTML = `
         <span>Oven Temperature</span>
         <div class="percent-display">
-          <h2><span id="temp-${oven.name}">${tempData[oven.name]}</span> °C</h2>
+          <h2><span id="temp-${oven.name}">${tempData[oven.name] || 0}</span> °C</h2>
           <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
             <span>up</span> from baseline
           </p>
@@ -377,10 +373,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Function to update the .view-frame with selected oven information
   function updateViewFrame(oven) {
     viewFrameName.innerHTML = `
-      <div class="view-header-name-cont">
+      <div id="activityBodyTag-${oven.name}" class="view-header-name-cont">
       <h2>${oven.name}</h2>
       <span class="dot"></span>
-      <p>Active: 0s</p>
+      <p>${activeOvens[oven.name]?.status || 'Disconnected:'} ${activeOvens[oven.name]?.time || '0s'}</p>
       </div>
       <div class="arrow-nav">
       <i class='bx bx-chevron-left' id="nav-arrow-left"></i>
@@ -413,7 +409,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="main-sec1-header">
             <div class="main-sec1-cards view-active">
               <p>Oven Temperature</p>
-              <h1 id="main-temp">${tempData[oven.name]}°C</h1>
+              <h1 id="main-temp">${(tempData[oven.name] || 0)}°C</h1>
               <div>
                 <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
               </div>
@@ -624,6 +620,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   }
 
+
   // Event listener for tab options
   viewOptions.forEach(viewOption => {
     viewOption.addEventListener('click', () => {
@@ -713,6 +710,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
+    } else if (message.type === 'statusUpdate') {
+      console.log('Oven status updated:', message.data);
+      const { ovenName, status, timestamp } = message.data;
+  
+      // Update the activeOvens object
+      activeOvens[ovenName] = { status, timestamp };
+  
+      // Update the status and color in the DOM
+      const activityDivSide = document.getElementById(`activity-${ovenName}`);
+      const activityDivBody = document.getElementById(`activityBodyTag-${ovenName}`);
+      activityDivSide.querySelector('p').innerText = status
+      activityDivBody.querySelector('p').innerText = status
+      if (status === 'Active') {
+        activityDivSide.querySelector('span').style= 'background-color: green';
+        activityDivBody.querySelector('span').style= 'background-color: green';
+      } else if (status === 'Idle'){
+        activityDivSide.querySelector('span').style= 'background-color: #FFBF00';
+        activityDivBody.querySelector('span').style= 'background-color: #FFBF00';
+      } else{
+        activityDivSide.querySelector('span').style= 'background-color: maroon';
+        activityDivBody.querySelector('span').style= 'background-color: maroon';
+      }
     }
   });
 });

@@ -88,7 +88,7 @@ def send_oven_active_message(ws, oven_name):
 # Main loop to emulate the sequence
 def emulate_oven_sequence(oven_name, sequence):
     ws = create_connection(WEBSOCKET_URL)
-    
+    ws.send(json.dumps({"type": "identify", "clientId": oven_name}))
     try:
         current_temp = sequence[0]["temperature"]  # Initialize current temperature
         idle_time = 20
