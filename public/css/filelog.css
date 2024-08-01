@@ -1,0 +1,137 @@
+.dropdown {
+    background-color: #fbfdff;
+    min-width: 10em;
+    position: relative;
+    top: 0;
+    border-radius: 0.5em;
+}
+.select {
+    background: #fbfdff;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px #cfd2da solid;
+    border-radius: 0.5em;
+    padding: 0.8em;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.7vw;
+}
+
+.select:hover {
+    box-shadow: 0 0 0.8em #26489a;
+}
+.caret {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #292929;
+    transition: 0.3s;
+}
+.caret-rotate {
+    transform: rotate(180deg);
+}
+.menu {
+    list-style: none;
+    padding: 0.15em 0.5em;
+    background: #11101d;
+    border: 1px #363a43 solid;
+    box-shadow: 0 0.5em 1em rgba(0, 0, 0, 0.2);
+    border-radius: 0.5em;
+    color: #b1b7c7;
+    position: absolute;
+    top: 110%;
+    left: 50%;
+    width: 100%;
+    transform: translateX(-50%);
+    opacity: 0;
+    display: none;
+    transition: 0.2s;
+    z-index: 1;
+    max-height: 10em;
+    overflow-y: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}   
+.menu::-webkit-scrollbar{
+    display: none;
+}
+
+.menu li {
+    padding: 0.7em 0.5em;
+    margin: 0.3em 0;
+    border-radius: 0.5em;
+    cursor: pointer;
+    font-size: 0.6vw;
+}
+.menu li:hover {
+    background: #303344;
+}
+.active-menu {
+    background: #23242a;
+}
+.menu-open {
+    display: block;
+    opacity: 1;
+}
+
+
+.fileheader{
+    display: flex;
+    align-items: center;
+    padding: 1em 1em 2em 1em;
+}
+.fileheader .fileItem{
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    justify-content: space-between;
+    max-height: fit-content;
+    padding: 0em 1em 0em 0em;
+}
+.fileheader h3{
+    font-size: 1vw;
+    vertical-align: bottom;
+}
+
+.fileheader input{
+    background: #fbfdff;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px #cfd2da solid;
+    padding: 0.8em;
+    font-size: 0.7vw;
+    border-radius: 0.5em;
+    min-width: 20em;
+}
+
+.row{
+    margin: 0 !important;
+}
+
+table button{
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-decoration: underline 1px #11101d;
+    text-underline-offset: 0.2em;
+    transition: 0.2s ease-in-out;
+}
+
+table button:hover{
+    color: #007bff;
+    text-decoration: underline 1px #007bff;
+}
+
+.fileheaderName{
+    padding: 1em;
+}
+
+.fileheaderName h1{
+    font-size: 2vw;
+}
+

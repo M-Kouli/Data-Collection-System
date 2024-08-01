@@ -278,15 +278,17 @@
     font-size: 2.25vw;
     display: flex;
     align-items: center;
+    padding: 0 0.4em;
 }
 
 .arrow-nav i{
     font-weight: 300;
     padding: 0 0.4em;
+    display: none;
 }
 
 .arrow-nav p{
-    font-size: 0.625vw;
+    font-size: 0.725vw;
 }
 
 .view-options{
@@ -388,9 +390,9 @@
 .main-tool-board{
     background-color: white;
     border-radius: 0.5em;
-    min-height: 45vh;
-    max-height: 65vh;
-    margin: 0 1.5em 1em 2em;
+    min-height: 50vh;
+    max-height: 50vh;
+    margin: 1.2em 1.5em 0em 2em;
     padding: 0.2em;
     border: #cfd2da 2px solid;
     display: flex;
@@ -399,6 +401,7 @@
 
 .main-tool-board-header{
     display: flex;
+    flex-direction: column;
     border-bottom: #cfd2da 2px solid;
     align-items: baseline;
     padding: 1vw;
@@ -409,34 +412,99 @@
     font-weight: 500;
     font-size: 1.15vw;
     padding-right: 0.8em;
+    padding-bottom: 0.3em;
 }
 
+.main-tool-board-header div{
+    display: flex;
+}
 
-
+.main-tool-board-header div p{
+    font-size: 0.9vw;
+    padding-right: 1em;
+    font-weight: 500;
+}
+.main-tool-board-header div p span{
+    font-size: 0.8vw;
+    font-weight: 400;
+    padding-left: 0.4em;
+}
+.main-tool-board-body h3{
+    font-weight: 500;
+    font-size: 1.2vw;
+}
 .main-tool-board-body {
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    height: 50vh; /* Set your desired max height */
-    max-height: 100vh; /* Ensure the container uses the available height */
+    height: 40vh; /* Set your desired max height */
+    max-height: 40vh; /* Ensure the container uses the available height */
     width: 100%; /* Full width of the container */
     gap: 10px; /* Adjust gap as needed */
     padding: 0.5vw 1vw;
     box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
   }
 
-.single-board{
+.main-tool-board-body-header{
     display: flex;
-    justify-content: space-between;
-    max-width: 10em;
+    margin-bottom: 1em;
 }
 
-.single-board p{
-    font-size: 0.75vw;
+.main-tool-board-body-header p{
+    font-size: 0.9vw;
+    padding-right: 1em;
+    font-weight: 400;
+}
+.main-tool-board-body-header p span{
+    font-size: 0.8vw;
     font-weight: 500;
+    padding-left: 0.5em;
+}
+.main-tool-board-body-container{
+    max-height: 50vh; /* Adjust as needed */
+    overflow-y: auto;
+    width: 100%;
+}
+
+.main-tool-board-body-container::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(182, 182, 182, 0.3);
+	border-radius: 10px;
+	background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+.main-tool-board-body-container::-webkit-scrollbar
+{
+	width: 12px;
+	background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+.main-tool-board-body-container::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(182, 182, 182, 0.3);
+	background-color: #9c9c9c;
+    cursor: pointer;
 }
 
 
-.single-board p:last-child{
-    color: green;
-}
+.main-tool-board-body-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10vh, 1fr));
+    gap: 10px;
+    max-height: 50vh; /* Adjust as needed */
+    overflow-y: auto;
+  }
+  .board-failure p {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .board-failure p:first-child {
+    font-weight: 500;
+    font-size: 1vw;
+  }
+  .board-failure p {
+    font-size: 0.8vw
+  }

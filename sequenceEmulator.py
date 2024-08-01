@@ -49,7 +49,7 @@ def generate_board_data(oven_name, temperature, upper_control_limit, lower_contr
         "temperature": temperature,  # Use current oven temperature
         "upperControlLimit": upper_control_limit,
         "lowerControlLimit": lower_control_limit,
-        "p1": random.uniform(20, 60),
+        "p1": random.uniform(20, 80),
         "p1UpperControlLimit": board_limits["p1"][0],
         "p1LowerControlLimit": board_limits["p1"][1],
         "p2": random.uniform(20, 60),
@@ -156,4 +156,4 @@ def emulate_oven_sequence(oven_name, sequence):
         ws.close()
 
 # Start the sequence emulation
-emulate_oven_sequence("Gollum", sequence)
+emulate_oven_sequence("Gimli", sequence)
