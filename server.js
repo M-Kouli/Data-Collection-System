@@ -274,7 +274,9 @@ app.get('/', (req, res) => {
 app.get('/devices', (req, res) => {
   res.sendFile(path.join(__dirname + '/views/devices.html'));
 });
-
+app.get('/fileManager', (req, res) => {
+  res.sendFile(path.join(__dirname + '/views/filelog.html'));
+});
 app.get('/data', (req, res) => {
   res.send('WebSocket server running');
 });

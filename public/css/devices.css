@@ -508,3 +508,26 @@
   .board-failure p {
     font-size: 0.8vw
   }
+
+
+.calendarCont{
+    display: flex;
+    padding: 1em;
+}  
+
+#navCal{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.calendarPage{
+    background-color: white;
+    border-radius: 0.5em;
+    min-height: 50vh;
+    margin: 1.2em 1.5em 0em 2em;
+    padding: 0.2em;
+    border: #cfd2da 2px solid;
+    display: flex;
+    flex-direction: column;
+}

@@ -168,12 +168,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Create buttons for each run
   function createRunButtons(highestActiveID, ovenName) {
     runsContainer.innerHTML = '';
-    for (let i = 1; i <= highestActiveID; i++) {
-      const button = document.createElement('button');
-      button.textContent = `Download Run ${i}`;
-      button.addEventListener('click', () => downloadRunData(ovenName, i));
-      runsContainer.appendChild(button);
-    }
+    // for (let i = 1; i <= highestActiveID; i++) {
+    //   const button = document.createElement('button');
+    //   button.textContent = `Download Run ${i}`;
+    //   button.addEventListener('click', () => downloadRunData(ovenName, i));
+    //   runsContainer.appendChild(button);
+    // }
   }
 
   // Function to download run data

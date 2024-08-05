@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const maxBoardsPerOven = {
     "Gollum": 5,
     "Treebeard": 3,
-    "Gimli": 4,
+    "Gimli": 5,
     "Saruman": 6,
     "Galadriel": 2,
     "Peregrin": 7,
@@ -575,9 +575,6 @@ async function fetchAllOvenTemps() {
         <span>Oven Temperature</span>
         <div class="percent-display">
           <h2><span id="temp-${oven.name}">${tempData[oven.name] || 0}</span> °C</h2>
-          <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
-            <span>up</span> from baseline
-          </p>
         </div>
       `;
 
@@ -815,7 +812,100 @@ async function fetchAllOvenTemps() {
 
     }
     else {
-      viewmain.innerHTML = `<h2>OTHER CONTENT</h2>`;
+      viewmain.innerHTML = `
+      <div class="calendarPage">
+        <div class="calendarCont">    
+          <div id="navCal"></div>
+          <div id="dp"></div>
+        </div>
+      </div>
+ `;
+ const nav = new DayPilot.Navigator("navCal", {
+  showMonths: 2,
+  skipMonths: 2,
+  selectMode: "Week",
+  freeHandSelectionEnabled: true,
+  selectionDay: DayPilot.Date.today(),
+  orientation: "Vertical",
+  onTimeRangeSelected: args => {
+      dp.startDate = args.start;
+      dp.update();
+  },
+  onVisibleRangeChange: args => {
+      var start = args.start;
+      var end = args.end;
+
+      if (start <= nav.selectionDay && nav.selectionDay < end) {
+          return;
+      }
+
+      var day = nav.selectionDay.getDay();
+      var target = start.firstDayOfMonth().addDays(day);
+      nav.select(target);
+  },
+  onBeforeCellRender: args => {
+      if (args.cell.isCurrentMonth) {
+          args.cell.cssClass = "current-month";
+      }
+  }
+});
+nav.init();
+
+const dp = new DayPilot.Calendar("dp", {
+  startDate: DayPilot.Date.today(),
+  viewType: "Week",
+  contextMenu: new DayPilot.Menu({
+      items: [
+          {
+              text: "Show event ID",
+              onClick: args => DayPilot.Modal.alert(`Event ID: ${args.source.id()}`)
+          },
+          {
+              text: "Show event text",
+              onClick: args => DayPilot.Modal.alert(`Event text: ${args.source.text()}`)
+          },
+          {
+              text: "Show event start",
+              onClick: args => DayPilot.Modal.alert(`Event start: ${args.source.start()}`)
+          },
+          {
+              text: "Delete",
+              onClick: args => dp.events.remove(args.source)
+          }
+      ]
+  }),
+  onTimeRangeSelected: async args => {
+      const modal = await DayPilot.Modal.prompt("New event name:", "Event");
+      if (modal.canceled) {
+          return;
+      }
+      dp.events.add({
+          start: args.start,
+          end: args.end,
+          id: DayPilot.guid(),
+          resource: args.resource,
+          text: modal.result // Assuming that the event text should be the user input
+      });
+      dp.clearSelection();
+      dp.message("Created");
+  },
+  onBeforeEventRender: args => {
+      args.data.areas = [
+          {
+              top: 4,
+              right: 4,
+              height: 14,
+              width: 14,
+              fontColor: "#999",
+              symbol: "../icons/daypilot.svg#minichevron-down-4",
+              visibility: "Hover",
+              action: "ContextMenu",
+              style: "border: 1px solid #999; cursor:pointer;"
+          }
+      ];
+  }
+});
+dp.init();
     }
   }
 
