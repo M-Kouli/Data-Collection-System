@@ -22,14 +22,16 @@ sequence = [
 ]
 
 # Function to generate oven data
-def generate_oven_data(oven_name, temperature, upper_control_limit, lower_control_limit):
+def generate_oven_data(oven_name, temperature, upper_control_limit, lower_control_limit, is_ramping):
     return {
-        "ovenId": oven_name,  # Use oven name as ovenId
+        "ovenId": oven_name,
         "temperature": temperature,
-        "upperControlLimit": upper_control_limit,
-        "lowerControlLimit": lower_control_limit,
+        "temperatureUpperControlLimit": upper_control_limit if not is_ramping else None,
+        "temperatureLowerControlLimit": lower_control_limit if not is_ramping else None,
         "dataType": "Oven",
-        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        "hasOvenControlLimits": not is_ramping,
+        "hasBoardControlLimits": False
     }
 
 # Function to generate board data
@@ -45,10 +47,10 @@ def generate_board_data(oven_name, temperature, upper_control_limit, lower_contr
         "vt": (65, 15)
     }
     return {
-        "ovenId": oven_name,  # Use oven name as ovenId
-        "temperature": temperature,  # Use current oven temperature
-        "upperControlLimit": upper_control_limit,
-        "lowerControlLimit": lower_control_limit,
+        "ovenId": oven_name,
+        "temperature": temperature,
+        "temperatureUpperControlLimit": upper_control_limit,
+        "temperatureLowerControlLimit": lower_control_limit,
         "p1": random.uniform(20, 80),
         "p1UpperControlLimit": board_limits["p1"][0],
         "p1LowerControlLimit": board_limits["p1"][1],
@@ -74,8 +76,10 @@ def generate_board_data(oven_name, temperature, upper_control_limit, lower_contr
         "vtUpperControlLimit": board_limits["vt"][0],
         "vtLowerControlLimit": board_limits["vt"][1],
         "dataType": "Board",
-        "boardId": f"{random.randint(1, 5)}",  # Example boardId
-        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        "boardId": f"{random.randint(1, 5)}",
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        "hasOvenControlLimits": False,
+        "hasBoardControlLimits": True
     }
 
 # Function to send a WebSocket notification
@@ -95,7 +99,7 @@ def emulate_oven_sequence(oven_name, sequence):
         
         # Send idle data for 20 seconds
         for _ in range(idle_time):
-            data = generate_oven_data(oven_name, 25, 27, 23)
+            data = generate_oven_data(oven_name, 25, 27, 23, False)
             send_websocket_notification(ws, data)
             time.sleep(1)
         
@@ -125,7 +129,7 @@ def emulate_oven_sequence(oven_name, sequence):
                 fluctuated_temp = current_temp + random.uniform(-0.5, 0.5)
                 upper_control_limit = expected_temp + 2  # Control limit based on expected temperature
                 lower_control_limit = expected_temp - 2  # Control limit based on expected temperature
-                data = generate_oven_data(oven_name, fluctuated_temp, upper_control_limit, lower_control_limit)
+                data = generate_oven_data(oven_name, fluctuated_temp, upper_control_limit, lower_control_limit, True)
                 send_websocket_notification(ws, data)
                 time.sleep(1)
             
@@ -142,12 +146,12 @@ def emulate_oven_sequence(oven_name, sequence):
                 else:
                     fluctuated_temp = current_temp + random.uniform(-0.5, 0.5)
                 
-                data = generate_oven_data(oven_name, fluctuated_temp, upper_control_limit, lower_control_limit)
+                data = generate_oven_data(oven_name, fluctuated_temp, upper_control_limit, lower_control_limit, False)
                 send_websocket_notification(ws, data)
                 
                 # Occasionally send board data
                 if random.choice([True, False]):
-                    board_data = generate_board_data(oven_name, fluctuated_temp, upper_control_limit, lower_control_limit)
+                    board_data = generate_board_data(oven_name, fluctuated_temp,upper_control_limit,lower_control_limit)
                     send_websocket_notification(ws, board_data)
                 
                 time.sleep(1)  # wait for 1 second
@@ -156,4 +160,4 @@ def emulate_oven_sequence(oven_name, sequence):
         ws.close()
 
 # Start the sequence emulation
-emulate_oven_sequence("Gimli", sequence)
+emulate_oven_sequence("Gollum", sequence)

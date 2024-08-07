@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const OvenData = require('./models/OvenData');
 const OvenStatus = require('./models/OvenStatus');
+const Event = require('./models/Event'); // Add this line to import the Event model
 
 const app = express();
 const server = http.createServer(app);
@@ -50,34 +51,90 @@ async function createOvenCollections() {
         ovenId: { type: String, required: true },
         timestamp: { type: String, required: true },
         temperature: { type: Number, required: true },
-        temperatureUpperControlLimit: { type: Number, required: true },
-        temperatureLowerControlLimit: { type: Number, required: true },
+        temperatureUpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.hasOvenControlLimits === true; } 
+        },
+        temperatureLowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.hasOvenControlLimits === true; } 
+        },
         dataType: { type: String, enum: ['Oven', 'Board'], required: true },
-        boardId: { type: String, required: function () { return this.dataType === 'Board'; } },
-        p1: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        p1UpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        p1LowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        p2: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        p2UpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        p2LowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t1: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t1UpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t1LowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t2: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t2UpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        t2LowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vx: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vxUpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vxLowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vz: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vzUpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vzLowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        ct: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        ctUpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        ctLowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vt: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vtUpperControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
-        vtLowerControlLimit: { type: Number, required: function () { return this.dataType === 'Board'; } },
+        hasOvenControlLimits: { type: Boolean, required: function() { return this.dataType === 'Oven'; } },
+        hasBoardControlLimits: { type: Boolean, required: function() { return this.dataType === 'Board'; } },
+        boardId: { type: String, required: function() { return this.dataType === 'Board'; } },
+        p1: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        p1UpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        p1LowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        p2: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        p2UpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        p2LowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        t1: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        t1UpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        t1LowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        t2: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        t2UpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        t2LowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vx: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        vxUpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vxLowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vz: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        vzUpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vzLowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        ct: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        ctUpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        ctLowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vt: { type: Number, required: function() { return this.dataType === 'Board'; } },
+        vtUpperControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
+        vtLowerControlLimit: { 
+          type: Number, 
+          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
+        },
       }, { collection: collectionName });
       ovenDataSchema.add({ activeID: { type: Number, required: true } });
       const OvenDataCollection = mongoose.model(collectionName, ovenDataSchema);
@@ -186,8 +243,10 @@ wss.on('connection', (ws) => {
       const newData = new OvenData({
         ovenId: parsedData.data.ovenId,
         temperature: parsedData.data.temperature,
-        temperatureUpperControlLimit: parsedData.data.upperControlLimit,
-        temperatureLowerControlLimit: parsedData.data.lowerControlLimit,
+        temperatureUpperControlLimit: parsedData.data.temperatureUpperControlLimit,
+        temperatureLowerControlLimit: parsedData.data.temperatureLowerControlLimit,
+        hasOvenControlLimits: parsedData.data.hasOvenControlLimits,
+        hasBoardControlLimits: parsedData.data.hasBoardControlLimits,
         p1: parsedData.data.p1,
         p1UpperControlLimit: parsedData.data.p1UpperControlLimit,
         p1LowerControlLimit: parsedData.data.p1LowerControlLimit,
@@ -487,6 +546,114 @@ app.get('/activeData/:ovenId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+// Define event creation route
+app.post('/events', async (req, res) => {
+  const { title, notes, start, end, ovenId } = req.body;
+  if (!title || !notes || !start || !end || !ovenId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const eventId = new mongoose.Types.ObjectId(); // Generate a unique eventId
+  const newEvent = new Event({ eventId, title, notes, start, end, ovenId });
+  try {
+    await newEvent.save();
+    res.status(201).json(newEvent);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Define event update route
+app.put('/events/:eventId', async (req, res) => {
+  const { title, notes, start, end, ovenId } = req.body;
+  if (!title || !notes || !start || !end || !ovenId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const updatedEvent = await Event.findOneAndUpdate(
+      { eventId: req.params.eventId },
+      { title, notes, start, end, ovenId },
+      { new: true }
+    );
+    if (!updatedEvent) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    res.json(updatedEvent);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Define event deletion route
+app.delete('/events/:eventId', async (req, res) => {
+  try {
+    const deletedEvent = await Event.findOneAndDelete({ eventId: req.params.eventId });
+    if (!deletedEvent) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    res.json(deletedEvent);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+
+// Fetch events for a specific oven
+app.get('/events', async (req, res) => {
+  const { ovenId } = req.query;
+  try {
+    const events = await Event.find({ ovenId });
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+// New endpoint to get event counts within a date range
+app.get('/eventCountsInRange', async (req, res) => {
+  const { start, end, ovenId } = req.query;
+  if (!start || !end || !ovenId) {
+      return res.status(400).json({ error: 'Missing start, end date, or ovenId' });
+  }
+
+  try {
+      // Adjust start and end times to include the entire day
+      const adjustedStart = new Date(new Date(start).setHours(0, 0, 0, 100));
+      const adjustedEnd = new Date(new Date(end).setHours(23, 59, 59, 0));
+
+      console.log(`Fetching events for oven ${ovenId} from ${adjustedStart.toISOString()} to ${adjustedEnd.toISOString()}`);
+      const events = await Event.find({
+          ovenId,
+          $or: [
+            { start: { $gte: adjustedStart, $lte: adjustedEnd } },
+            { end: { $gte: adjustedStart, $lte: adjustedEnd } },
+            { start: { $lte: adjustedStart }, end: { $gte: adjustedEnd } }
+          ]
+      });
+      console.log(`Found ${events.length} events`);
+
+      const plannedCount = events.filter(event => event.title.startsWith('Planned')).length;
+      const unplannedCount = events.filter(event => event.title.startsWith('Unplanned')).length;
+
+      const response = {
+          total: events.length,
+          planned: plannedCount,
+          unplanned: unplannedCount
+      };
+
+      res.json(response);
+  } catch (error) {
+      console.error('Error fetching events:', error.message);
+      res.status(500).json({ error: error.message });
+  }
+});
+
+
 
 const PORT = 3000;
 const HOST = 'localhost';

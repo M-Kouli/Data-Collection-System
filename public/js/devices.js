@@ -66,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log(option);
   
     if (type === 'Category') {
-      // Get unique board numbers from the data, filter out undefined, and sort in ascending order
       let boardNumbers = [...new Set(newData.map(d => d.boardId))].filter(b => b !== undefined).sort((a, b) => a - b);
       console.log(boardNumbers);
   
@@ -81,32 +80,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         vz: { upper: 65, lower: 15 },
         ct: { upper: 65, lower: 15 },
         vt: { upper: 65, lower: 15 },
-        // Add more options and their control limits here
       };
   
-      // Compute the maximum index from all boards
       let maxIndex = 0;
-      const upperControlLimit = controlLimits[normalizedOption]?.upper || 255; // Default to 255 if not found
-      const lowerControlLimit = controlLimits[normalizedOption]?.lower || 145; // Default to 145 if not found
+      const upperControlLimit = controlLimits[normalizedOption]?.upper || 255;
+      const lowerControlLimit = controlLimits[normalizedOption]?.lower || 145;
   
-      // Create traces for each board number
       const traces = boardNumbers.map(boardId => {
         const boardData = newData.filter(d => d.boardId === boardId && d[normalizedOption] !== undefined);
         if (boardData.length > maxIndex) {
           maxIndex = boardData.length;
         }
         return {
-          x: boardData.map((_, index) => index), // Use index as x value
-          y: boardData.map(d => d[normalizedOption]), // Display P1 values on the y-axis
+          x: boardData.map((_, index) => index),
+          y: boardData.map(d => d[normalizedOption]),
           mode: 'lines',
-          name: `Board ${boardId}`, // Use the board number for the trace name
-          text: boardData.map(d => d.timestamp), // Add timestamps for hover info
-          hoverinfo: 'y+text', // Display x, y, and timestamp on hover
+          name: `Board ${boardId}`,
+          text: boardData.map(d => d.timestamp),
+          hoverinfo: 'y+text',
           connectgaps: true
         };
       });
   
-      // Identify points crossing control limits
       const crossingPoints = newData
         .filter(d => d[normalizedOption] !== undefined && (d[normalizedOption] > upperControlLimit || d[normalizedOption] < lowerControlLimit))
         .map((d, index) => ({
@@ -115,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           timestamp: d.timestamp,
         }));
   
-      // Create scatter trace for crossing points
       const crossingTrace = {
         x: crossingPoints.map(d => d.x),
         y: crossingPoints.map(d => d.y),
@@ -126,7 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         marker: { color: 'red', size: 10 },
       };
   
-      // Create control limit traces using maxIndex
       const indexRange = Array.from({ length: maxIndex }, (_, index) => index);
       const upperControlTrace = {
         x: indexRange,
@@ -158,28 +151,25 @@ document.addEventListener('DOMContentLoaded', async () => {
           title: option,
           autorange: true,
         },
-        xaxis:{
-          range: [boardNumbers.length-(boardNumbers.length-25),boardNumbers.length-boardNumbers.length], // Set initial range dynamically
+        xaxis: {
+          range: [boardNumbers.length - (boardNumbers.length - 25), boardNumbers.length - boardNumbers.length],
         }
       };
   
-      // Combine all traces into a single array
       const allTraces = [...traces, upperControlTrace, lowerControlTrace, crossingTrace];
       Plotly.react(plotlyChart, allTraces, layout);
     } else {
       const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
       if (option === 'All') {
         const boardOptions = ["p1", "p2", "t1", "t2", "vx", "vz", "ct", "vt"];
-        // Set the timestamp on the x-axis, and all the data plotted as lines
-        // With the legend on the side to control
         const traces = boardOptions.map(opt => ({
           x: newData.filter(d => d[opt] !== undefined).map(d => d.timestamp),
-          y: newData.filter(d => d[opt] !== undefined).map(d => d[opt]), // Use the normalized option to map y values
+          y: newData.filter(d => d[opt] !== undefined).map(d => d[opt]),
           mode: 'lines',
-          name: opt.toUpperCase(), // Use the original option for the name
+          name: opt.toUpperCase(),
           connectgaps: true
         }));
-        // Add temperature trace using secondary y-axis
+  
         const temperatureTrace = {
           x: newData.map(d => d.timestamp),
           y: newData.map(d => d.temperature),
@@ -191,7 +181,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         };
   
-        // Add temperature trace to traces array
         traces.push(temperatureTrace);
   
         const layout = {
@@ -203,12 +192,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             dtick: 1,
           },
           yaxis: {
-            title: 'Metrics', // Adjust this field based on your data
+            title: 'Metrics',
             autorange: true,
             side: 'left'
           },
-          xaxis:{
-            range: [newData.length-(newData.length-25),newData.length-newData.length], // Set initial range dynamically
+          xaxis: {
+            range: [newData.length - (newData.length - 25), newData.length - newData.length],
           },
           yaxis2: {
             title: 'Temperature',
@@ -219,31 +208,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   
         Plotly.react(plotlyChart, traces, layout);
       } else {
-        console.log(chartData)
         const controlLimits = {
-          temperature: { value: 10},
-          p1: { value: 50},
-          p2: { value: 50},
-          t1: { value: 50},
-          t2: { value: 50},
-          vx: { value: 50},
-          vz: { value: 50},
-          ct: { value: 50},
-          vt: { value: 50},
-        }
+          temperature: { value: 10 },
+          p1: { value: 50 },
+          p2: { value: 50 },
+          t1: { value: 50 },
+          t2: { value: 50 },
+          vx: { value: 50 },
+          vz: { value: 50 },
+          ct: { value: 50 },
+          vt: { value: 50 },
+        };
         const filteredData = chartData.filter(d => d[normalizedOption] !== undefined);
         const trace = {
           x: filteredData.map(d => d.timestamp),
-          y: filteredData.map(d => d[normalizedOption]), // Use the normalized option to map y values
+          y: filteredData.map(d => d[normalizedOption]),
           mode: 'lines',
-          name: option, // Use the original option for the name
+          name: option,
           connectgaps: true
         };
   
-        // Upper control limit trace
         const upperControlTrace = {
           x: filteredData.map(d => d.timestamp),
-          y: filteredData.map(d => d[normalizedOption+'UpperControlLimit']), // Use the received upper control limit
+          y: filteredData.map(d => d[normalizedOption + 'UpperControlLimit']),
           mode: 'lines',
           name: 'Upper Control Limit',
           line: {
@@ -251,11 +238,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             color: 'red'
           }
         };
-        console.log(normalizedOption+'LowerControlLimit')
-        // Lower control limit trace
+  
         const lowerControlTrace = {
           x: filteredData.map(d => d.timestamp),
-          y: filteredData.map(d => d[normalizedOption+'LowerControlLimit']), // Use the received lower control limit
+          y: filteredData.map(d => d[normalizedOption + 'LowerControlLimit']),
           mode: 'lines',
           name: 'Lower Control Limit',
           line: {
@@ -264,15 +250,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         };
   
-        // Identify points crossing control limits
         const crossingPoints = filteredData
-          .filter(d => d[normalizedOption] !== undefined && (d[normalizedOption] > d[normalizedOption+'UpperControlLimit'] || d[normalizedOption] < d[normalizedOption+'LowerControlLimit']))
-          .map((d) => ({
-            x: d.timestamp,
-            y: d[normalizedOption],
-          }));
+        .filter(d => 
+          d[normalizedOption] !== undefined &&
+          ((d.hasOvenControlLimits && (d[normalizedOption] > d[normalizedOption + 'UpperControlLimit'] || d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])) ||
+           (d.hasBoardControlLimits && (d[normalizedOption] > d[normalizedOption + 'UpperControlLimit'] || d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])))
+        )
+        .map((d) => ({
+          x: d.timestamp,
+          y: d[normalizedOption],
+        }));
   
-        // Create scatter trace for crossing points
         const crossingTrace = {
           x: crossingPoints.map(d => d.x),
           y: crossingPoints.map(d => d.y),
@@ -281,29 +269,28 @@ document.addEventListener('DOMContentLoaded', async () => {
           marker: { color: 'red', size: 10 },
         };
   
-        // Calculate the y-axis range based on the first y value
         const firstYValue = trace.y[0];
         const yAxisRange = [firstYValue - controlLimits[normalizedOption].value, firstYValue + controlLimits[normalizedOption].value];
   
         const layout = {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
-          uirevision:'true',
+          uirevision: 'true',
           xaxis: {
             title: 'Time',
             type: 'category',
             dtick: 1,
           },
           yaxis: {
-            title: option, // Adjust this field based on your data
+            title: option,
             autorange: false,
             range: yAxisRange
           },
-          xaxis:{
-            range: [filteredData.length-(filteredData.length-25),filteredData.length-filteredData.length], // Set initial range dynamically
+          xaxis: {
+            range: [filteredData.length - (filteredData.length - 25), filteredData.length - filteredData.length],
           }
         };
   
-        Plotly.react(plotlyChart, [trace,upperControlTrace,lowerControlTrace,crossingTrace], layout);
+        Plotly.react(plotlyChart, [trace, upperControlTrace, lowerControlTrace, crossingTrace], layout);
       }
     }
   }
@@ -315,8 +302,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     data.forEach(d => {
       // Check for oven temperature outliers
       if (d.dataType === 'Oven' && d.temperature !== undefined) {
-        if (d.temperature > d.temperatureUpperControlLimit || d.temperature < d.temperatureLowerControlLimit) {
-          ovenOutliersCount++;
+        if (d.temperatureUpperControlLimit !== null && d.temperatureLowerControlLimit !== null) {
+          if (d.temperature > d.temperatureUpperControlLimit || d.temperature < d.temperatureLowerControlLimit) {
+            ovenOutliersCount++;
+          }
         }
       }
   
@@ -333,21 +322,25 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (d[param] !== undefined) {
             const lowerLimit = d[`${param}LowerControlLimit`];
             const upperLimit = d[`${param}UpperControlLimit`];
-            if (d[param] < lowerLimit || d[param] > upperLimit) {
-              if (!boardsWithOutliers[boardId].failures[param]) {
-                boardsWithOutliers[boardId].failures[param] = 0;
+            if (lowerLimit !== null && upperLimit !== null) {
+              if (d[param] < lowerLimit || d[param] > upperLimit) {
+                if (!boardsWithOutliers[boardId].failures[param]) {
+                  boardsWithOutliers[boardId].failures[param] = 0;
+                }
+                boardsWithOutliers[boardId].failures[param]++;
+                boardsWithOutliers[boardId].totalFails++;
               }
-              boardsWithOutliers[boardId].failures[param]++;
-              boardsWithOutliers[boardId].totalFails++;
             }
           }
         });
       }
     });
+  
     console.log(ovenOutliersCount); // Number of oven temperature outliers
     console.log(boardsWithOutliers); // Log of boards with exceeded limits and parameters
-    populateOutliers(ovenOutliersCount, boardsWithOutliers)
-  };
+    populateOutliers(ovenOutliersCount, boardsWithOutliers);
+  }
+  
   
 // Populate HTML
 function populateOutliers(ovenOutliersCount, boardsWithOutliers) {
@@ -812,102 +805,270 @@ async function fetchAllOvenTemps() {
 
     }
     else {
+      let selectedRange = null;
+      const CurrentOvenName = document.querySelector(".view-header-name-cont").querySelector("h2").innerHTML;
       viewmain.innerHTML = `
       <div class="calendarPage">
         <div class="calendarCont">    
-          <div id="navCal"></div>
-          <div id="dp"></div>
+          <div id='calendar'></div>
         </div>
       </div>
- `;
- const nav = new DayPilot.Navigator("navCal", {
-  showMonths: 2,
-  skipMonths: 2,
-  selectMode: "Week",
-  freeHandSelectionEnabled: true,
-  selectionDay: DayPilot.Date.today(),
-  orientation: "Vertical",
-  onTimeRangeSelected: args => {
-      dp.startDate = args.start;
-      dp.update();
-  },
-  onVisibleRangeChange: args => {
-      var start = args.start;
-      var end = args.end;
-
-      if (start <= nav.selectionDay && nav.selectionDay < end) {
-          return;
+  <div id="eventModal" class="modal">
+    <div class="modal-content">
+      
+      <div class="modal-header">Event Details
+      <span class="close">&times;</span></div>
+      <div class="modal-body">
+        <input type="text" id="eventTitle" placeholder="Event Title" />
+        <textarea id="eventNotes" placeholder="Event Notes"></textarea>
+      </div>
+      <div class="modal-footer">
+      <button class="delete">Delete</button>
+      <div class="right-buttons">
+        <button class="save">Save</button>
+        <button class="cancel">Cancel</button>
+      </div>
+      </div>
+    </div>
+  </div>
+        <input type="text" name="daterange" id="daterange" />
+    <div id="eventCounts">
+        <p id="promptText">Select dates to show summary</p>
+        <p id="summaryText" style="display: none;">
+            Total Events: <span id="totalEvents">0</span><br>
+            Planned Events: <span id="plannedEvents">0</span><br>
+            Unplanned Events: <span id="unplannedEvents">0</span>
+        </p>
+    </div>
+    `;
+    $(document).ready(function() {
+      function fetchEventCounts(start, end) {
+          // Hide prompt text and show summary text
+          $('#promptText').hide();
+          $('#summaryText').show();
+          
+          fetch(`/eventCountsInRange?ovenId=${CurrentOvenName}&start=${start.toISOString()}&end=${end.toISOString()}`)
+              .then(response => response.json())
+              .then(data => {
+                  console.log('Event counts:', data);
+                  document.getElementById('totalEvents').innerText = data.total;
+                  document.getElementById('plannedEvents').innerText = data.planned;
+                  document.getElementById('unplannedEvents').innerText = data.unplanned;
+              })
+              .catch(error => {
+                  console.error('Error fetching event counts:', error);
+              });
       }
 
-      var day = nav.selectionDay.getDay();
-      var target = start.firstDayOfMonth().addDays(day);
-      nav.select(target);
-  },
-  onBeforeCellRender: args => {
-      if (args.cell.isCurrentMonth) {
-          args.cell.cssClass = "current-month";
-      }
-  }
-});
-nav.init();
-
-const dp = new DayPilot.Calendar("dp", {
-  startDate: DayPilot.Date.today(),
-  viewType: "Week",
-  contextMenu: new DayPilot.Menu({
-      items: [
-          {
-              text: "Show event ID",
-              onClick: args => DayPilot.Modal.alert(`Event ID: ${args.source.id()}`)
-          },
-          {
-              text: "Show event text",
-              onClick: args => DayPilot.Modal.alert(`Event text: ${args.source.text()}`)
-          },
-          {
-              text: "Show event start",
-              onClick: args => DayPilot.Modal.alert(`Event start: ${args.source.start()}`)
-          },
-          {
-              text: "Delete",
-              onClick: args => dp.events.remove(args.source)
-          }
-      ]
-  }),
-  onTimeRangeSelected: async args => {
-      const modal = await DayPilot.Modal.prompt("New event name:", "Event");
-      if (modal.canceled) {
-          return;
-      }
-      dp.events.add({
-          start: args.start,
-          end: args.end,
-          id: DayPilot.guid(),
-          resource: args.resource,
-          text: modal.result // Assuming that the event text should be the user input
+      $('#daterange').daterangepicker({
+          opens: 'left',
+      }, function(start, end) {
+          // Update the input with the selected date range
+          $('#daterange').val(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
+          fetchEventCounts(start, end);
       });
-      dp.clearSelection();
-      dp.message("Created");
-  },
-  onBeforeEventRender: args => {
-      args.data.areas = [
-          {
-              top: 4,
-              right: 4,
-              height: 14,
-              width: 14,
-              fontColor: "#999",
-              symbol: "../icons/daypilot.svg#minichevron-down-4",
-              visibility: "Hover",
-              action: "ContextMenu",
-              style: "border: 1px solid #999; cursor:pointer;"
-          }
-      ];
-  }
-});
-dp.init();
+
+      // Trigger event manually for initial load
+      const initialStart = moment().startOf('day');
+      const initialEnd = moment().endOf('day');
+      fetchEventCounts(initialStart, initialEnd);
+  });
+
+
+  // Event handling code
+  async function fetchEvents(ovenId) {
+    try {
+      const response = await fetch(`/events?ovenId=${ovenId}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      return [];
     }
   }
+
+  async function createEvent(event) {
+    console.log('Creating event:', event); // Log the event data
+    try {
+      const response = await fetch('/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event)
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to create event');
+      }
+      return responseData;
+    } catch (error) {
+      console.error('Error creating event:', error);
+    }
+  }
+  
+  async function updateEvent(event) {
+    try {
+      const response = await fetch(`/events/${event.eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event)
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
+  }
+  
+  async function deleteEvent(eventId) {
+    try {
+      const response = await fetch(`/events/${eventId}`, {
+        method: 'DELETE'
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  }
+
+  function getEventColor(title) {
+    const firstWord = title.split(' ')[0].toLowerCase();
+    switch (firstWord) {
+      case 'planned':
+        return '#d8eaf9';
+      case 'unplanned':
+        return '#ffc0cbad';
+      default:
+        return '#d3d3d373'; // Default color for events without specified first word
+    }
+  }
+  // Initialize calendar
+  const calendarEl = document.getElementById('calendar');
+  const events = await fetchEvents(CurrentOvenName); // Fetch events for the selected oven
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,listMonth'
+    },
+    editable: true,
+    events: events,
+    eventClick: function(info) {
+      openModal(info.event);
+      calendar.refetchEvents();
+    },
+    eventDrop: async function(info) {
+      const event = info.event;
+      const updatedEvent = {
+      eventId: event.extendedProps.eventId,
+        title: event.title,
+        notes: event.extendedProps.notes,
+        start: event.start,
+        end: event.end,
+        ovenId: CurrentOvenName // Include ovenId
+      };
+      await updateEvent(updatedEvent);
+    },
+    eventResize: async function(info) {
+      const event = info.event;
+      const updatedEvent = {
+      eventId: event.extendedProps.eventId,
+        title: event.title,
+        notes: event.extendedProps.notes,
+        start: event.start,
+        end: event.end,
+        ovenId: CurrentOvenName // Include ovenId
+      };
+      await updateEvent(updatedEvent);
+      calendar.refetchEvents(); // Refresh calendar to reflect changes
+    },
+    selectable: true,
+    select: function(info) {
+      selectedRange = info;
+      openModal();
+    },
+    height: '100%',
+    aspectRatio: 1.5,
+    eventDidMount: function(arg) {
+      const eventColor = getEventColor(arg.event.title);
+      arg.el.style.backgroundColor = eventColor;
+    }
+  });
+
+  calendar.render();
+
+  const eventModal = document.getElementById('eventModal');
+  const closeModal = document.querySelector('.close');
+  const saveButton = document.querySelector('.save');
+  const cancelButton = document.querySelector('.cancel');
+  const deleteButton = document.querySelector('.delete');
+  const eventTitleInput = document.getElementById('eventTitle');
+  const eventNotesInput = document.getElementById('eventNotes');
+  let currentEvent = null;
+
+  function openModal(event = null) {
+    currentEvent = event;
+    eventTitleInput.value = event ? event.title : '';
+    eventNotesInput.value = event ? event.extendedProps.notes : '';
+    deleteButton.style.display = event ? 'inline-block' : 'none';
+    eventModal.style.display = 'flex';
+  }
+
+  function closeModalFunc() {
+    eventModal.style.display = 'none';
+  }
+
+  closeModal.onclick = closeModalFunc;
+  cancelButton.onclick = closeModalFunc;
+  window.onclick = function(event) {
+    if (event.target == eventModal) {
+      closeModalFunc();
+    }
+  }
+
+// Inside the save button click handler
+// Save button click handler
+saveButton.onclick = async function() {
+  if (currentEvent) {
+    currentEvent.setProp('title', eventTitleInput.value);
+    currentEvent.setExtendedProp('notes', eventNotesInput.value);
+    const updatedEvent = {
+      eventId: currentEvent.extendedProps.eventId,
+      title: currentEvent.title,
+      notes: currentEvent.extendedProps.notes,
+      start: currentEvent.start.toISOString(),
+      end: currentEvent.end ? currentEvent.end.toISOString() : null,
+      ovenId: currentEvent.extendedProps.ovenId
+    };
+    // Update event color
+    await updateEvent(updatedEvent);
+  } else {
+    const newEvent = {
+      title: eventTitleInput.value,
+      notes: eventNotesInput.value,
+      start: selectedRange.start.toISOString(),
+      end: selectedRange.end ? selectedRange.end.toISOString() : null,
+      ovenId: CurrentOvenName // Include ovenId
+    };
+    const createdEvent = await createEvent(newEvent);
+    if (createdEvent) {
+      calendar.addEvent(createdEvent);
+    }
+  }
+  closeModalFunc();
+  calendar.refetchEvents(); // Refetch events to update colors
+
+}
+
+
+// Delete button click handler
+deleteButton.onclick = async function() {
+  if (currentEvent && confirm('Are you sure you want to delete this event?')) {
+    await deleteEvent(currentEvent.extendedProps.eventId);
+    currentEvent.remove();
+    closeModalFunc();
+  }
+}
+}}
 
   // Function to set up event listeners for the dropdown
 function setupDropdownEventListeners(dropdownId,oven) {

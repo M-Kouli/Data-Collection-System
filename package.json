@@ -12,6 +12,9 @@
   "description": "",
   "dependencies": {
     "@daypilot/daypilot-lite-javascript": "^3.25.0",
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
     "excel": "^1.0.1",
     "exceljs": "^4.4.0",
     "express": "^4.19.2",

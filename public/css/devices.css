@@ -513,21 +513,149 @@
 .calendarCont{
     display: flex;
     padding: 1em;
-}  
+    width: 100%;
+    height: 100%;
+  }
 
-#navCal{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+  #calendar {
+    width: 100%;
+    height: 100%;
+  }
+
+#calendar h2{
+    font-size: 1.4em;
 }
 
 .calendarPage{
     background-color: white;
     border-radius: 0.5em;
-    min-height: 50vh;
+    min-height: 60vh;
+    max-height: 70vh;
     margin: 1.2em 1.5em 0em 2em;
     padding: 0.2em;
     border: #cfd2da 2px solid;
     display: flex;
     flex-direction: column;
 }
+
+.event-delete {
+    color: red;
+    margin-left: 10px;
+    top: 0;
+    right: 0;
+    position: absolute;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 40%;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .modal-header {
+    font-size: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-body input,
+  .modal-body textarea {
+    padding: 10px;
+    font-size: 16px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .modal-body textarea{
+    min-height: 30vh;
+    max-height: 40vh;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top:1em;
+  }
+
+  .modal-footer button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .modal-footer button.save {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .modal-footer button.cancel {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .modal-footer button.delete {
+    background-color: #ff6347;
+    color: white;
+    float: left;
+  }
+
+  .view-main input{
+    background: #fbfdff;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px #cfd2da solid;
+    padding: 0.8em;
+    font-size: 0.7em;
+    border-radius: 0.5em;
+    min-width: 20vw;
+    max-width: 20em;
+    margin: 1.2em 1.5em 0em 2.7em
+}  
