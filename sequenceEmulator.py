@@ -160,4 +160,4 @@ def emulate_oven_sequence(oven_name, sequence):
         ws.close()
 
 # Start the sequence emulation
-emulate_oven_sequence("Gollum", sequence)
+emulate_oven_sequence("Gimli", sequence)

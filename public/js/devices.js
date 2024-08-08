@@ -370,6 +370,74 @@ function populateOutliers(ovenOutliersCount, boardsWithOutliers) {
     }
   });
 }
+function checkStats(data) {
+  let ovenCount = 0;
+  let boardsOutliers = {};
+
+  data.forEach(d => {
+    // Check for oven temperature outliers
+    if (d.dataType === 'Oven' && d.temperature !== undefined) {
+      if (d.temperatureUpperControlLimit !== null && d.temperatureLowerControlLimit !== null) {
+        if (d.temperature > d.temperatureUpperControlLimit || d.temperature < d.temperatureLowerControlLimit) {
+          ovenCount++;
+        }
+      }
+    }
+
+    // Check for board parameter outliers
+    if (d.dataType === 'Board') {
+      const boardId = d.boardId;
+      if (!boardsOutliers[boardId]) {
+        boardsOutliers[boardId] = { failures: {}, totalFails: 0 };
+      }
+
+      const parameters = ['p1', 'p2', 't1', 't2', 'vx', 'vz', 'ct', 'vt'];
+
+      parameters.forEach(param => {
+        if (d[param] !== undefined) {
+          const lowerLimit = d[`${param}LowerControlLimit`];
+          const upperLimit = d[`${param}UpperControlLimit`];
+          if (lowerLimit !== null && upperLimit !== null) {
+            if (d[param] < lowerLimit || d[param] > upperLimit) {
+              if (!boardsOutliers[boardId].failures[param]) {
+                boardsOutliers[boardId].failures[param] = 0;
+              }
+              boardsOutliers[boardId].failures[param]++;
+              boardsOutliers[boardId].totalFails++;
+            }
+          }
+        }
+      });
+    }
+  });
+  return { ovenCount, boardsOutliers };
+}
+
+// Function to calculate days difference
+function calculateDaysDifference(startDate) {
+  const currentDate = new Date();
+  const eventDate = new Date(startDate);
+  const timeDifference = eventDate - currentDate;
+  const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+  return daysDifference;
+}
+
+// Function to update event information
+function updateEventInfo(data) {
+  const eventInfoDiv =  document.querySelectorAll(".main-sec1-cards")[2].querySelector("h1");
+  if (!data || !data.start) {
+    eventInfoDiv.textContent = '0 d.';
+    return;
+  }
+
+  const daysDifference = calculateDaysDifference(data.start);
+
+  if (daysDifference >= 1) {
+    eventInfoDiv.textContent = `${daysDifference} d.`;
+  } else if (daysDifference === 0) {
+    eventInfoDiv.textContent = `Today.`;
+  }
+}
 
   // Fetch oven data
   async function fetchOvens() {
@@ -619,38 +687,75 @@ async function fetchAllOvenTemps() {
         </div>
         <div class="main-sec1">
           <div class="main-sec1-header">
-            <div class="main-sec1-cards view-active">
+            <div class="main-sec1-cards">
               <p>Oven Temperature</p>
               <h1 id="main-temp">${(tempData[oven.name] || 0)}°C</h1>
-              <div>
-                <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
-              </div>
             </div>
             <div class="main-sec1-cards">
               <p>Parts</p>
               <h1>0.0%</h1>
               <div>
-                <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
+                <p class="up-base"><span>0</span>%</p>
               </div>
             </div>
             <div class="main-sec1-cards">
               <p>Maintenance Date</p>
               <h1>0s</h1>
               <div>
-                <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
+                <p class="up-base">Until Next Maintenance Event</p>
               </div>
             </div>
             <div class="main-sec1-cards">
               <p>Performance</p>
               <h1>0.0%</h1>
               <div>
-                <p class="up-base"><i class='bx bx-up-arrow-alt'></i><span>0</span>%
+                <p class="up-base">Number of Temperature Outliers</p>
               </div>
             </div>
           </div>
-          <div class="main-sec1-body"></div>
+          <div class="main-sec1-body">
+            <div id="myPlotlyChart"></div>
+          </div>
         </div>
       `;
+      try {
+        const response = await fetch(`/highestActiveID?ovenName=${oven.name !== undefined ? oven.name : oven.firstChild.innerHTML}`);
+        const data = await response.json();
+        const highestActiveID = data.highestActiveID;
+        console.log(highestActiveID);
+        const activeResponse = await fetch(`/downloadExcel?ovenName=${oven.name !== undefined ? oven.name : oven.firstChild.innerHTML}&activeID=${highestActiveID}`);
+        const activeData = await activeResponse.json();
+        console.log(activeData);
+        const { ovenCount, boardsOutliers } = checkStats(activeData);
+        // Set oven outliers count
+        document.querySelectorAll(".main-sec1-cards")[3].querySelector("h1").innerHTML= ovenCount;
+
+        // Calculate and set board failures count
+        const totalBoards = Object.keys(boardsOutliers).length;
+        const failedBoards = Object.values(boardsOutliers).filter(board => board.totalFails > 0).length;
+        const percentage = ((totalBoards-failedBoards)/totalBoards)*100;
+        const displayPercentage = isNaN(percentage) ? 0 : Math.round(percentage);
+        document.querySelectorAll(".main-sec1-cards")[1].querySelector("h1").innerHTML = `${displayPercentage} %`;
+        document.querySelectorAll(".main-sec1-cards")[1].querySelector(".up-base").innerHTML = `Total Boards: ${totalBoards}`;
+
+        const eventResponse = await fetch(`/closestEvent?ovenId=${oven.name !== undefined ? oven.name : oven.firstChild.innerHTML}`);
+        const eventData = await eventResponse.json();
+        console.log(eventData);
+        // Initial update
+        updateEventInfo(eventData);
+
+        // Update every hour
+        setInterval(updateEventInfo, 3600000); // 3600000 milliseconds = 1 hour
+        initializeChart([], 'Oven Temperature Over Time'); // Initialize the chart with empty data and default title
+        fetchOvenData(
+          oven.name !== undefined ? oven.name : oven.firstChild.innerHTML, 
+          "Oven", 
+          "Temperature", 
+        );
+        console.log(chartData)
+      } catch (error) {
+        console.error(error);
+      }
     } else if (activeTab === 'Tool Monitoring') {
       viewmain.innerHTML = `
       <div class="main-tool-header">
@@ -805,7 +910,7 @@ async function fetchAllOvenTemps() {
       <div class="modal-header">Event Details
       <span class="close">&times;</span></div>
       <div class="modal-body">
-        <input type="text" id="eventTitle" placeholder="Event Title" />
+        <input autocomplete="off" type="text" id="eventTitle" placeholder="Event Title" />
         <textarea id="eventNotes" placeholder="Event Notes"></textarea>
       </div>
       <div class="modal-footer">
@@ -1036,6 +1141,7 @@ async function fetchAllOvenTemps() {
     eventDidMount: function(arg) {
       const eventColor = getEventColor(arg.event.title);
       arg.el.style.backgroundColor = eventColor;
+      arg.el.style.color = '#000000'; // Explicitly set text color to black
     }
   });
 

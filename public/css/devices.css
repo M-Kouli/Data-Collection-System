@@ -232,7 +232,7 @@
 }
 
 .up-base{
-    color: green;
+    color: black;
 }
 
 .selected-list{
@@ -325,7 +325,6 @@
 .main-sec1{
     background-color: white;
     border-radius: 0.5em;
-    min-height: 65vh;
     max-height: 75vh;
     margin: 0 1.5em 1em 2em;
     border: #cfd2da 2px solid;
@@ -337,7 +336,6 @@
 .main-sec1-header{
     display: flex;
     border-bottom: #cfd2da 2px solid;
-    align-items: center;
     padding: 1vw;
     padding-bottom: 0;
 }
@@ -363,7 +361,10 @@
     font-weight: 400;
     font-size: 2vw;
 }
-.main-sec-body{}
+.main-sec1-body{
+    min-height: 60vh;
+    padding-bottom: 1em;
+}
 
 .main-tool{
     background-color: white;
@@ -726,4 +727,9 @@
 }
 .event-summary-item{
     padding: 0.5em 0em;
+}
+
+
+.fc-h-event .fc-event-main{
+    color: #000 !important;
 }

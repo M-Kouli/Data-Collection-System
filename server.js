@@ -678,6 +678,25 @@ app.get('/eventsInRange', async (req, res) => {
   }
 });
 
+// Endpoint to get the the closest event to the current time
+app.get('/closestEvent', async (req, res) => {
+  const{ovenId} = req.query;
+  const currentTime = new Date();
+  try {
+    const events = await Event.find({ovenId});
+    const closestEvent = events
+      .filter(event => event.start >= currentTime && event.end >= currentTime)
+      .sort((a, b) => a.start - b.start)[0];
+    if (closestEvent === undefined) {
+      res.json([]);
+    } else {
+      res.json(closestEvent);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = 3000;
 const HOST = 'localhost';
 server.listen(PORT, HOST, () => {
