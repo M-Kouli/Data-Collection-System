@@ -117,53 +117,131 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Function to display filtered runs
+  function checkOutliers(data) {
+    let boardsWithOutliers = {};
+  
+    data.forEach(d => {
+      // Check for board parameter outliers
+      if (d.dataType === 'Board') {
+        const boardId = d.boardId;
+        if (!boardsWithOutliers[boardId]) {
+          boardsWithOutliers[boardId] = { failures: {}, totalFails: 0 };
+        }
+  
+        const parameters = ['p1', 'p2', 't1', 't2', 'vx', 'vz', 'ct', 'vt'];
+  
+        parameters.forEach(param => {
+          if (d[param] !== undefined) {
+            const lowerLimit = d[`${param}LowerControlLimit`];
+            const upperLimit = d[`${param}UpperControlLimit`];
+            if (lowerLimit !== null && upperLimit !== null) {
+              if (d[param] < lowerLimit || d[param] > upperLimit) {
+                if (!boardsWithOutliers[boardId].failures[param]) {
+                  boardsWithOutliers[boardId].failures[param] = 0;
+                }
+                boardsWithOutliers[boardId].failures[param]++;
+                boardsWithOutliers[boardId].totalFails++;
+              }
+            }
+          }
+        });
+      }
+    });
+    console.log(boardsWithOutliers); // Log of boards with exceeded limits and parameters
+    return { boardsWithOutliers };
+  }
+  
   function displayFilteredRuns(runs) {
-    console.log(runs)
+    console.log(runs);
     if (runs.length === 0) {
       runsContainer.innerHTML = '<p style="padding: 0em 1em;">No runs found for the selected date range.</p>';
       return;
-    }else{
-          runsContainer.innerHTML = '';
-    const table = document.createElement('table');
-    table.setAttribute('id', 'tableRuns');
-    table.setAttribute('class', 'table table-striped table-bordered');
-    const thead = document.createElement('thead');
-    const tbody = document.createElement('tbody');
-    thead.innerHTML = `
-      <tr>
-        <th>Run Number</th>
-        <th>Start Date</th>
-        <th>End Date</th>
-        <th>Download</th>
-      </tr>
-    `;
-    table.appendChild(thead);
-    table.appendChild(tbody);
-
-    runs.forEach(run => {
-      const row = document.createElement('tr');
-      const startTimestamp = run.entries.length > 0 ? formatDate(run.entries[0].timestamp) : 'No data';
-      const endTimestamp = run.entries.length > 0 ? formatDate(run.entries[run.entries.length - 1].timestamp) : 'No data';
-
-      row.innerHTML = `
-        <td>Run ${run.activeID}</td>
-        <td>${startTimestamp}</td>
-        <td>${endTimestamp}</td>
-        <td><button id="download-${run.activeID}">Download</button></td>
+    } else {
+      runsContainer.innerHTML = '';
+      const table = document.createElement('table');
+      table.setAttribute('id', 'tableRuns');
+      table.setAttribute('class', 'table table-striped table-bordered');
+      const thead = document.createElement('thead');
+      const tbody = document.createElement('tbody');
+      thead.innerHTML = `
+        <tr>
+          <th>Run Number</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Total Boards</th>
+          <th>Boards Passed</th>
+          <th>Boards Failed</th>
+          <th>Pass Rate</th>
+          <th>Download</th>
+        </tr>
       `;
-      row.querySelector(`#download-${run.activeID}`).addEventListener('click', () => downloadRunData(document.querySelector('#drop6 .selected').innerText, run.activeID));
-      tbody.appendChild(row);
-    });
-
-    runsContainer.appendChild(table);
-    $(document).ready(function() {
-      $('#tableRuns').DataTable();
-  } );
-    }
-
+      table.appendChild(thead);
+      table.appendChild(tbody);
   
+      // Initialize counters for summary row
+      let totalRuns = 0;
+      let sumTotalBoards = 0;
+      let sumPassedBoards = 0;
+      let sumFailedBoards = 0;
+  
+      runs.forEach(run => {
+        const row = document.createElement('tr');
+        const startTimestamp = run.entries.length > 0 ? formatDate(run.entries[0].timestamp) : 'No data';
+        const endTimestamp = run.entries.length > 0 ? formatDate(run.entries[run.entries.length - 1].timestamp) : 'No data';
+  
+        // Check outliers for the current run
+        const { boardsWithOutliers } = checkOutliers(run.entries);
+        const totalBoards = Object.keys(boardsWithOutliers).length;
+        const failedBoards = Object.values(boardsWithOutliers).filter(board => board.totalFails > 0).length;
+        const passedBoards = totalBoards - failedBoards;
+        const passRate = totalBoards === 0 ? 'N/A' : ((passedBoards / totalBoards) * 100).toFixed(2) + '%';
+  
+        // Update counters for summary row
+        totalRuns++;
+        sumTotalBoards += totalBoards;
+        sumPassedBoards += passedBoards;
+        sumFailedBoards += failedBoards;
+  
+        row.innerHTML = `
+          <td>Run ${run.activeID}</td>
+          <td>${startTimestamp}</td>
+          <td>${endTimestamp}</td>
+          <td>${totalBoards}</td>
+          <td>${passedBoards}</td>
+          <td>${failedBoards}</td>
+          <td>${passRate}</td>
+          <td><button id="download-${run.activeID}">Download</button></td>
+        `;
+        row.querySelector(`#download-${run.activeID}`).addEventListener('click', () => downloadRunData(document.querySelector('#drop6 .selected').innerText, run.activeID));
+        tbody.appendChild(row);
+      });
+  
+      runsContainer.appendChild(table);
+  
+      // Initialize DataTables
+      $(document).ready(function() {
+        $('#tableRuns').DataTable();
+      });
+  
+      // Calculate the overall pass rate
+      const overallPassRate = sumTotalBoards === 0 ? 'N/A' : ((sumPassedBoards / sumTotalBoards) * 100).toFixed(2) + '%';
+  
+      // Add summary row after DataTables initialization
+      const summaryRow = document.createElement('tr');
+      summaryRow.innerHTML = `
+        <td colspan="3"><strong>Summary</strong></td>
+        <td><strong>${sumTotalBoards}</strong></td>
+        <td><strong>${sumPassedBoards}</strong></td>
+        <td><strong>${sumFailedBoards}</strong></td>
+        <td><strong>${overallPassRate}</strong></td>
+        <td></td>
+      `;
+      // Append summary row directly to the table without DataTables processing it
+      table.appendChild(summaryRow);
+    }
   }
+  
+  
 
   // Create buttons for each run
   function createRunButtons(highestActiveID, ovenName) {

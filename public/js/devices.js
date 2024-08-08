@@ -616,18 +616,6 @@ async function fetchAllOvenTemps() {
     if (activeTab === 'Overview') {
       viewmain.innerHTML = `
         <div class="main-filter">
-          <div class="dropdown" id="drop2">
-            <div class="select">
-              <span class="selected">Last 7 Days</span>
-              <div class="caret"></div>
-            </div>
-            <ul class="menu">
-              <li data-category="All" class=".active-menu">Last 7 Days</li>
-              <li data-category="E Series">Last Month</li>
-              <li data-category="C Series">Last 6 Months</li>
-              <li data-category="Schlumberger">Last Year</li>
-            </ul>
-          </div>
         </div>
         <div class="main-sec1">
           <div class="main-sec1-header">
@@ -663,8 +651,6 @@ async function fetchAllOvenTemps() {
           <div class="main-sec1-body"></div>
         </div>
       `;
-
-      setupDropdownEventListeners('drop2',oven);
     } else if (activeTab === 'Tool Monitoring') {
       viewmain.innerHTML = `
       <div class="main-tool-header">
@@ -831,15 +817,31 @@ async function fetchAllOvenTemps() {
       </div>
     </div>
   </div>
-        <input type="text" name="daterange" id="daterange" />
-    <div id="eventCounts">
+
+        <div class="main-tool-board" id="eventMainBoard">
+        <h2 class="MaintanenceH2">Select Date Range:</h2>
+                
+    <div id="eventCounts" class="event-header">
+    <input type="text" name="daterange" id="daterange" />
         <p id="promptText">Select dates to show summary</p>
-        <p id="summaryText" style="display: none;">
-            Total Events: <span id="totalEvents">0</span><br>
-            Planned Events: <span id="plannedEvents">0</span><br>
-            Unplanned Events: <span id="unplannedEvents">0</span>
-        </p>
+        <div id="summaryText" class="eventCounts" style="display: none;">
+            <p>Total Events: <span id="totalEvents">0</span></p>
+            <p>Planned Events: <span id="plannedEvents">0</span></p>
+            <p>Unplanned Events: <span id="unplannedEvents">0</span></p>
+        </div>
+            </div>
+        <div class="event-summary-section">
+    <div class="event-container">
+        <h3>Planned Events</h3>
+        <div id="plannedEventGrid" class="event-summary-grid"></div>
     </div>
+
+    <div class="event-container">
+        <h3>Unplanned Events</h3>
+        <div id="unplannedEventGrid" class="event-summary-grid"></div>
+    </div>
+    </div>
+
     `;
     $(document).ready(function() {
       function fetchEventCounts(start, end) {
@@ -854,12 +856,55 @@ async function fetchAllOvenTemps() {
                   document.getElementById('totalEvents').innerText = data.total;
                   document.getElementById('plannedEvents').innerText = data.planned;
                   document.getElementById('unplannedEvents').innerText = data.unplanned;
+                   // Fetch events within the date range and display in the grid
+            fetchEventsInRange(start, end);
               })
               .catch(error => {
                   console.error('Error fetching event counts:', error);
               });
       }
-
+      function fetchEventsInRange(start, end) {
+        fetch(`/eventsInRange?ovenId=${CurrentOvenName}&start=${start.toISOString()}&end=${end.toISOString()}`)
+          .then(response => response.json())
+          .then(data => {
+            console.log('Events in range:', data);
+            displayEventSummaries(data);
+          })
+          .catch(error => {
+            console.error('Error fetching events in range:', error);
+          });
+      }
+    
+      function extractSummary(notes) {
+        const summaryIndex = notes.toLowerCase().indexOf('summary');
+        return summaryIndex !== -1 ? notes.substring(summaryIndex + 7).trim() : 'No summary found';
+      }
+    
+      function displayEventSummaries(events) {
+        const plannedEventGrid = document.getElementById('plannedEventGrid');
+        const unplannedEventGrid = document.getElementById('unplannedEventGrid');
+        plannedEventGrid.innerHTML = '';
+        unplannedEventGrid.innerHTML = '';
+        
+        events.forEach(event => {
+            const summary = extractSummary(event.notes);
+            const eventColor = getEventColor(event.title);
+            const eventItem = document.createElement('div');
+            eventItem.classList.add('event-summary-item');
+            eventItem.innerHTML = `
+                <p><strong>Title:</strong> ${event.title}</p>
+                <p><strong>Start:</strong> ${new Date(event.start).toLocaleString()}</p>
+                <p><strong>End:</strong> ${new Date(event.end).toLocaleString()}</p>
+                <p><strong>Summary:</strong> ${summary}</p>
+            `;
+    
+            if (event.title.toLowerCase().startsWith('planned')) {
+                plannedEventGrid.appendChild(eventItem);
+            } else if (event.title.toLowerCase().startsWith('unplanned')) {
+                unplannedEventGrid.appendChild(eventItem);
+            }
+        });
+    }
       $('#daterange').daterangepicker({
           opens: 'left',
       }, function(start, end) {

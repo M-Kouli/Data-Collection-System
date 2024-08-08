@@ -529,7 +529,7 @@
 .calendarPage{
     background-color: white;
     border-radius: 0.5em;
-    min-height: 60vh;
+    min-height: 70vh;
     max-height: 70vh;
     margin: 1.2em 1.5em 0em 2em;
     padding: 0.2em;
@@ -645,7 +645,7 @@
     float: left;
   }
 
-  .view-main input{
+  .main-tool-board input{
     background: #fbfdff;
     color: black;
     display: flex;
@@ -653,9 +653,77 @@
     align-items: center;
     border: 2px #cfd2da solid;
     padding: 0.8em;
-    font-size: 0.7em;
+    font-size: 0.8em;
     border-radius: 0.5em;
     min-width: 20vw;
     max-width: 20em;
-    margin: 1.2em 1.5em 0em 2.7em
+    margin: 1.2em 1.5em 0em 1em
 }  
+
+.MaintanenceH2{
+    margin: 0.5em 1.5em 0em 0.7em;
+    font-size: 1.5em;
+    font-weight: 500;
+}
+
+.eventCounts{
+    display: flex;
+    margin: 0.8em 1.5em 0em 0.8em;
+}
+
+.eventCounts p{
+    padding-right: 1em;
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.event-summary-section{
+    display: flex;
+    justify-content: space-between;
+    padding: 1em;
+    overflow: auto;
+    column-gap: 5em;
+}
+.event-summary-section::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(182, 182, 182, 0.3);
+	border-radius: 10px;
+	background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+.event-summary-section::-webkit-scrollbar
+{
+	width: 12px;
+	background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+.event-summary-section::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(182, 182, 182, 0.3);
+	background-color: #9c9c9c;
+    cursor: pointer;
+}
+
+.event-container{
+    width: 100%;
+}
+
+.event-summary-section h3{
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.event-header{
+    display: flex;
+    align-items: center;
+}
+
+#eventMainBoard{
+    margin-bottom: 2em;
+}
+.event-summary-item{
+    padding: 0.5em 0em;
+}

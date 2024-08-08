@@ -653,7 +653,30 @@ app.get('/eventCountsInRange', async (req, res) => {
   }
 });
 
+// New endpoint to get events within a date range
+app.get('/eventsInRange', async (req, res) => {
+  const { start, end, ovenId } = req.query;
+  if (!start || !end || !ovenId) {
+    return res.status(400).json({ error: 'Missing start, end date, or ovenId' });
+  }
 
+  try {
+          // Adjust start and end times to include the entire day
+          const adjustedStart = new Date(new Date(start).setHours(0, 0, 0, 100));
+          const adjustedEnd = new Date(new Date(end).setHours(23, 59, 59, 0));
+    const events = await Event.find({
+      ovenId,
+      $or: [
+        { start: { $gte: adjustedStart, $lte: adjustedEnd } },
+        { end: { $gte: adjustedStart, $lte: adjustedEnd } },
+        { start: { $lte: adjustedStart }, end: { $gte: adjustedEnd } }
+      ]
+    });
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 const PORT = 3000;
 const HOST = 'localhost';
