@@ -10,13 +10,25 @@ const Event = require('./models/Event'); // Add this line to import the Event mo
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+const { auth, requiresAuth } = require('express-openid-connect');
 
+const config = {
+  authRequired: false,
+  auth0Logout: true,
+  secret: 'a long, randomly-generated string stored in env',
+  baseURL: 'http://localhost:3000',
+  clientID: 'kxM8PAgOFbPFdqyRZlFbpjfTB0vHAHQK',
+  issuerBaseURL: 'https://dev-b8nsr1hwcnb1jo2a.us.auth0.com'
+};
+
+// auth router attaches /login, /logout, and /callback routes to the baseURL
+app.use(auth(config));
 // Middleware
 app.use(express.static('public'));
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/OvenMonitoring', {
+mongoose.connect('mongodb://localhost/OvenMonitoring', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -322,6 +334,7 @@ wss.on('connection', (ws) => {
   });
 });
 
+
 // Serve static files from the 'views' directory
 app.use(express.static(path.join(__dirname, 'views')));
 
@@ -330,7 +343,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/views/index.html'));
 });
 
-app.get('/devices', (req, res) => {
+app.get('/devices',(req, res) => {
   res.sendFile(path.join(__dirname + '/views/devices.html'));
 });
 app.get('/fileManager', (req, res) => {

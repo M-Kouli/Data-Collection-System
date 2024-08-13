@@ -4,7 +4,7 @@ import json
 from websocket import create_connection
 
 # Define the WebSocket URL
-WEBSOCKET_URL = "ws://localhost:3000"
+WEBSOCKET_URL = "wss://9611-82-46-133-26.ngrok-free.app"
 
 # Define the oven sequence for "Gollum"
 sequence = [

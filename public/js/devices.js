@@ -53,7 +53,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       scrollZoom: true,
       displaylogo: false,
       showEditInChartStudio: true,
-      plotlyServerURL: "https://chart-studio.plotly.com"
+      plotlyServerURL: "https://chart-studio.plotly.com",
+      displayModeBar: true // Ensures the mode bar is displayed
     };
 
     Plotly.newPlot('myPlotlyChart', [trace], layout, config);
@@ -102,23 +103,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
       });
   
-      const crossingPoints = newData
-        .filter(d => d[normalizedOption] !== undefined && (d[normalizedOption] > upperControlLimit || d[normalizedOption] < lowerControlLimit))
-        .map((d, index) => ({
-          x: index,
-          y: d[normalizedOption],
-          timestamp: d.timestamp,
-        }));
+      // const crossingPoints = newData
+      //   .filter(d => d[normalizedOption] !== undefined && (d[normalizedOption] > upperControlLimit || d[normalizedOption] < lowerControlLimit))
+      //   .map((d, index) => ({
+      //     x: index,
+      //     y: d[normalizedOption],
+      //     timestamp: d.timestamp,
+      //   }));
   
-      const crossingTrace = {
-        x: crossingPoints.map(d => d.x),
-        y: crossingPoints.map(d => d.y),
-        mode: 'markers',
-        name: 'Crossing Points',
-        text: crossingPoints.map(d => d.timestamp),
-        hoverinfo: 'y+text',
-        marker: { color: 'red', size: 10 },
-      };
+      // const crossingTrace = {
+      //   x: crossingPoints.map(d => d.x),
+      //   y: crossingPoints.map(d => d.y),
+      //   mode: 'markers',
+      //   name: 'Crossing Points',
+      //   text: crossingPoints.map(d => d.timestamp),
+      //   hoverinfo: 'y+text',
+      //   marker: { color: 'red', size: 10 },
+      // };
   
       const indexRange = Array.from({ length: maxIndex }, (_, index) => index);
       const upperControlTrace = {
@@ -142,6 +143,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const layout = {
         title: `Category ${option} Over Time`,
         uirevision: 'true',
+        modebar: {
+          add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+        },
         xaxis: {
           title: 'Index',
           type: 'category',
@@ -156,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       };
   
-      const allTraces = [...traces, upperControlTrace, lowerControlTrace, crossingTrace];
+      const allTraces = [...traces, upperControlTrace, lowerControlTrace];
       Plotly.react(plotlyChart, allTraces, layout);
     } else {
       const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
@@ -186,6 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const layout = {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
           uirevision: 'true',
+          modebar: {
+            add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+          },
           xaxis: {
             title: 'Time',
             type: 'category',
@@ -275,6 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const layout = {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
           uirevision: 'true',
+          modebar: {
+            add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+          },
           xaxis: {
             title: 'Time',
             type: 'category',
@@ -459,7 +469,7 @@ function updateEventInfo(data) {
           url += `&boardNum=${boardNum}`;
         }
         const response = await fetch(url);
-        const data = await response.json();
+        const data = (await response.json()).slice(0, 10080);
   
         highestActiveIDChartData = data; // Initialize chartData with the fetched data
         console.log(highestActiveIDChartData);
@@ -475,7 +485,7 @@ function updateEventInfo(data) {
         url += `&boardNum=${boardNum}`;
       }
       const response = await fetch(url);
-      const data = await response.json();
+      const data = (await response.json()).slice(0, 10080);
 
       chartData = data; // Initialize chartData with the fetched data
       console.log(chartData);
@@ -1377,7 +1387,7 @@ function setupDropdownEventListeners(dropdownId,oven) {
   fetchOvens();
 
   // WebSocket setup
-  const socket = new WebSocket(`ws://${window.location.host}`);
+  const socket = new WebSocket(`wss://${window.location.host}`);
 
   socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);
@@ -1404,10 +1414,19 @@ function setupDropdownEventListeners(dropdownId,oven) {
       // Update the temperature data for the corresponding oven
       currentOven = document.querySelector('.selected-list').firstChild.innerHTML;
       currentTab = document.querySelector('.view-active').innerHTML
+      console.log(`currentOven: ${currentOven}, currentTab: ${currentTab}`);
       tempData[ovenId] = Math.trunc(temperature);
       document.getElementById(`temp-${ovenId}`).innerText = tempData[ovenId];
       if (currentOven === ovenId && currentTab === 'Overview') {
         document.getElementById('main-temp').innerText = `${tempData[ovenId]}°C`;
+        if (currentOven && currentOven === message.data.ovenId) {
+          chartData.unshift(message.data);
+          updateChartData(
+            chartData, 
+            "Oven", 
+            "Temperature", 
+          );
+        }
       } else {
         if (currentTab === 'Tool Monitoring') {
         currentType = document.querySelector('#drop3 .selected').innerText;
