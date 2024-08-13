@@ -1387,7 +1387,7 @@ function setupDropdownEventListeners(dropdownId,oven) {
   fetchOvens();
 
   // WebSocket setup
-  const socket = new WebSocket(`wss://${window.location.host}`);
+  const socket = new WebSocket(`ws://${window.location.host}`);
 
   socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);

@@ -1,16 +1,16 @@
 {
-    "log_board_data": false,
+    "log_board_data": true,
     "temperature_control": {
-        "allow_control_limits": false,
-        "lower_temp_value": 0.0,
-        "high_temp_value": 0.0,
-        "temp_limits_plus_minus": 0.0,
+        "allow_control_limits": true,
+        "lower_temp_value": 25.0,
+        "high_temp_value": 150.0,
+        "temp_limits_plus_minus": 2.0,
         "ramp_rate": null
     },
     "board_data": {
-        "modbus_burnsys": "Modbus",
+        "modbus_burnsys": "Burnsys",
         "is_treebeard": false,
-        "folder_path": "",
+        "folder_path": "E:/Saruman/Output",
         "allow_control_limits": false,
         "control_limits": {
             "P1": {
@@ -42,6 +42,7 @@
                 "plus_minus": 0.0
             }
         },
-        "com_port": ""
+        "sequence": "P1 P2 T1 T2 Vx Vz Ct Vt",
+        "com_port": "COM3"
     }
 }

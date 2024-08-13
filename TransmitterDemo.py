@@ -1,53 +1,24 @@
-import random
+import serial
 import time
-import json
-from websocket import create_connection
 
-# Define the WebSocket URL
-WEBSOCKET_URL = "ws://localhost:3000"
+# Replace with your Arduino's serial port
+SERIAL_PORT = 'COM4'  # Use the correct COM port on your system
+BAUD_RATE = 9600
 
-# Define the list of ovens
-ovens = ["Gollum", "Treebeard", "Gimli", "Saruman", "Galadriel", "Peregrin", "Frodo"]
+def send_message(message):
+    try:
+        with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
+            # Give some time for the serial connection to establish
+            time.sleep(2)
+            ser.write((message + '\n').encode())
+            print(f"Sent message: {message}")
+            time.sleep(1)  # Wait for Arduino to process and respond
+            while ser.in_waiting > 0:
+                response = ser.readline().decode().strip()
+                print(f"Arduino response: {response}")
+    except Exception as e:
+        print(f"Error: {e}")
 
-# Function to generate random oven data
-def generate_oven_data(oven_name):
-    return {
-        "ovenId": oven_name,  # Use oven name as ovenId
-        "temperature": random.uniform(150, 250),  # Random temperature between 150 and 250
-        "dataType": "Oven",
-        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-    }
-
-# Function to generate random board data
-def generate_board_data(oven_name):
-    return {
-        "ovenId": oven_name,  # Use oven name as ovenId
-        "temperature": random.uniform(150, 250),
-        "p1": random.uniform(20, 60),
-        "p2": random.uniform(20, 60),
-        "t1": random.uniform(20, 60),
-        "t2": random.uniform(20, 60),
-        "vx": random.uniform(20, 60),
-        "vz": random.uniform(20, 60),
-        "ct": random.uniform(20, 60),
-        "vt": random.uniform(20, 60),
-        "dataType": "Board",
-        "boardId": f"{random.randint(1, 5)}",  # Example boardId
-        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-    }
-
-# Function to send a WebSocket notification
-def send_websocket_notification(data):
-    ws = create_connection(WEBSOCKET_URL)
-    ws.send(json.dumps({"type": "newOvenData", "data": data}))
-    ws.close()
-
-# Main loop to generate and send data
-while True:
-    for oven in ovens:
-        if random.choice([True, False]):
-            data = generate_oven_data(oven)
-        else:
-            data = generate_board_data(oven)
-        send_websocket_notification(data)
-    time.sleep(1)  # Wait for 5 seconds before sending the next batch of data
+if __name__ == "__main__":
+    message = input("Enter a message to send to Arduino: ")
+    send_message(message)
