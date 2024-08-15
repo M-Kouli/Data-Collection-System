@@ -5,7 +5,7 @@
         "lower_temp_value": 25.0,
         "high_temp_value": 150.0,
         "temp_limits_plus_minus": 2.0,
-        "ramp_rate": null
+        "ramp_rate": 2.0
     },
     "board_data": {
         "modbus_burnsys": "Burnsys",

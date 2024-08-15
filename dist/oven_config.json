@@ -1,0 +1,48 @@
+{
+    "log_board_data": false,
+    "temperature_control": {
+        "allow_control_limits": true,
+        "lower_temp_value": 0.0,
+        "high_temp_value": 0.0,
+        "temp_limits_plus_minus": 0.0,
+        "ramp_rate": null
+    },
+    "board_data": {
+        "modbus_burnsys": "Modbus",
+        "is_treebeard": false,
+        "folder_path": "",
+        "com_port": "",
+        "allow_control_limits": false,
+        "control_limits": {
+            "P1": {
+                "plus_minus": 0.0
+            },
+            "P2": {
+                "plus_minus": 0.0
+            },
+            "T1": {
+                "plus_minus": 0.0,
+                "low_temp_value": 0.0,
+                "high_temp_value": 0.0
+            },
+            "T2": {
+                "plus_minus": 0.0,
+                "low_temp_value": 0.0,
+                "high_temp_value": 0.0
+            },
+            "Vx": {
+                "plus_minus": 0.0
+            },
+            "Vz": {
+                "plus_minus": 0.0
+            },
+            "Ct": {
+                "plus_minus": 0.0
+            },
+            "Vt": {
+                "plus_minus": 0.0
+            }
+        },
+        "sequence": "P1 P2 T1 T2 Vx Vz Ct Vt"
+    }
+}

@@ -71,25 +71,47 @@ class OvenMonitor:
 
     def establish_connection(self, oven_name):
         try:
-            if self.connected == False:
-                self.ser = serial.Serial('COM4', 9600, timeout=1)  # Adjust 'COM3' as per your setup
-                self.ser.write(f"CONNECT {oven_name}\n".encode('utf-8'))
+            if not self.connected:
+                self.ser = serial.Serial('COM4', 9600, timeout=1)  # Adjust 'COM4' as per your setup
+                time.sleep(2)  # Allow time for the serial connection to establish
+                
+                # Send CONNECT command
+                connect_message = f"CONNECT {oven_name}\n"
+                self.ser.write(connect_message.encode('ascii'))
+                print(f"Sent: {connect_message.strip()}")
+                time.sleep(1)  # Wait for Arduino to process the CONNECT command
+
+                # Read and serialize JSON configuration
                 with open(CONFIG_FILE, 'r') as f:
                     json_data = json.load(f)
-        
+                
                 json_str = json.dumps(json_data)
-                self.ser.write((json_str + '\n').encode())
-                print(f"Sent JSON data: {json_str}")
+                
+                # Prepend "JSON:" identifier to the JSON string
+                full_message = f"JSON:{json_str}\n"
+                self.ser.write(full_message.encode('ascii'))
+                print(f"Sent JSON data: {full_message.strip()}")
+                time.sleep(2)  # Wait for Arduino to process the JSON data
+
+                # Optionally, read Arduino responses for debugging
+                while self.ser.in_waiting > 0:
+                    response = self.ser.readline().decode().strip()
+                    print(f"Arduino response: {response}")
+
+                self.connected = True
+
+                messagebox.showinfo("Connection", f"Connected to oven '{oven_name}' and idling.")
             else:
-                self.ser.write(f"IDLE {oven_name}\n".encode('utf-8'))
-            
-            time.sleep(0.5)  # Wait for Arduino to process and respond
-            while self.ser.in_waiting > 0:
-                response = self.ser.readline().decode().strip()
-                print(f"Arduino response: {response}")
-            self.connected = True
+                idle_message = f"IDLE\n"
+                self.ser.write(idle_message.encode('ascii'))
+                print(f"Sent: {idle_message.strip()}")
+                time.sleep(1)
+                
+                # Read Arduino responses
+                while self.ser.in_waiting > 0:
+                    response = self.ser.readline().decode().strip()
+                    print(f"Arduino response: {response}")
             app.show_active_session_controls()
-            messagebox.showinfo("Connection", f"Connected to oven '{oven_name}' and idling.")
         except Exception as e:
             messagebox.showerror("Connection Error", f"Failed to establish connection: {str(e)}")
 
@@ -115,9 +137,9 @@ class OvenMonitor:
                 response = self.ser.readline().decode().strip()
                 print(f"Arduino response: {response}")
             
-            # Check if logging is enabled
-            if app.config["log_board_data"]:
-                self.execute_logging_script(app.config["board_data"])
+            # # Check if logging is enabled
+            # if app.config["log_board_data"]:
+            #     self.execute_logging_script(app.config["board_data"])
 
             messagebox.showinfo("Active Session", "Active session started.")
         

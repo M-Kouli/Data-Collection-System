@@ -4,7 +4,7 @@ import json
 from websocket import create_connection
 
 # Define the WebSocket URL
-WEBSOCKET_URL = "wss://9611-82-46-133-26.ngrok-free.app"
+WEBSOCKET_URL = "ws://192.168.0.11:3000"
 
 # Define the oven sequence for "Gollum"
 sequence = [
@@ -26,11 +26,11 @@ def generate_oven_data(oven_name, temperature, upper_control_limit, lower_contro
     return {
         "ovenId": oven_name,
         "temperature": temperature,
-        "temperatureUpperControlLimit": upper_control_limit if not is_ramping else None,
-        "temperatureLowerControlLimit": lower_control_limit if not is_ramping else None,
+        "temperatureUpperControlLimit": None,
+        "temperatureLowerControlLimit": None,
         "dataType": "Oven",
         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-        "hasOvenControlLimits": not is_ramping,
+        "hasOvenControlLimits": False,
         "hasBoardControlLimits": False
     }
 

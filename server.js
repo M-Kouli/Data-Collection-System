@@ -711,7 +711,7 @@ app.get('/closestEvent', async (req, res) => {
 });
 
 const PORT = 3000;
-const HOST = 'localhost';
+const HOST = '0.0.0.0';
 server.listen(PORT, HOST, () => {
   console.log(`Server is listening on http://${HOST}:${PORT}`);
 });
