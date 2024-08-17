@@ -32,14 +32,14 @@ def load_config():
                 "com_port": "",
                 "allow_control_limits": False,
                 "control_limits": {
-                    "P1": {"plus_minus": 0.0},
-                    "P2": {"plus_minus": 0.0},
+                    "P1": {"plus_minus": 0.0, "additional_value": 0.0},
+                    "P2": {"plus_minus": 0.0, "additional_value": 0.0},
                     "T1": {"plus_minus": 0.0, "low_temp_value": 0.0, "high_temp_value": 0.0},
                     "T2": {"plus_minus": 0.0, "low_temp_value": 0.0, "high_temp_value": 0.0},
-                    "Vx": {"plus_minus": 0.0},
-                    "Vz": {"plus_minus": 0.0},
-                    "Ct": {"plus_minus": 0.0},
-                    "Vt": {"plus_minus": 0.0}
+                    "Vx": {"plus_minus": 0.0,  "additional_value": 0.0},
+                    "Vz": {"plus_minus": 0.0,  "additional_value": 0.0},
+                    "Ct": {"plus_minus": 0.0,  "additional_value": 0.0},
+                    "Vt": {"plus_minus": 0.0,  "additional_value": 0.0}
                 },
                 "sequence": "P1 P2 T1 T2 Vx Vz Ct Vt"
             }
@@ -137,9 +137,9 @@ class OvenMonitor:
                 response = self.ser.readline().decode().strip()
                 print(f"Arduino response: {response}")
             
-            # # Check if logging is enabled
-            # if app.config["log_board_data"]:
-            #     self.execute_logging_script(app.config["board_data"])
+            # Check if logging is enabled
+            if app.config["log_board_data"]:
+                self.execute_logging_script(app.config["board_data"])
 
             messagebox.showinfo("Active Session", "Active session started.")
         
@@ -178,19 +178,27 @@ class OvenMonitor:
         last_read_positions = {}
 
         def get_last_line(file_path):
+            last_line = ''
             with open(file_path, 'rb') as file:
+                # Go to the end of the file
                 file.seek(0, os.SEEK_END)
-                file_size = file.tell()
-                buffer_size = 1024
-                buffer = b''
-                while file_size > 0:
-                    file_size = max(0, file_size - buffer_size)
-                    file.seek(file_size)
-                    buffer = file.read(min(buffer_size, file_size)) + buffer
-                    if b'\n' in buffer:
-                        last_line = buffer.split(b'\n')[-2].decode('utf-8')  # The last line is empty, so take the second last
-                        return last_line
-                return buffer.decode('utf-8')  # If there's no newline, return the buffer
+                
+                while True:
+                    # Read the last line in the file
+                    file.seek(-2, os.SEEK_CUR)
+                    while file.tell() > 0:
+                        char = file.read(1)
+                        if char == b'\n':
+                            break
+                        file.seek(-2, os.SEEK_CUR)
+                    
+                    last_line = file.readline().decode('utf-8').strip()
+                    
+                    # If there's an addition to the file, break and return
+                    if last_line:
+                        break
+
+            return last_line
 
         def parse_and_send_to_arduino(last_line,filename):
             # Assuming sequence is read from the config and passed here
@@ -263,14 +271,15 @@ class OvenMonitor:
         def parse_normal_format(line, sequence, filename):
             # The sequence comes from the config file and is a string like "P1 P2 T1 T2 Vx Vz Ct Vt"
             sequence_list = sequence.split()
-
+            print(sequence_list)
             # Example line: "2024-06-25 13:20:16.451 <00000>    99    98   253   264    23    11   100  1210"
             # Split the line into components
             parts = line.strip().split()
+            print(parts)
 
             # Extract the timestamp (assumed to be the first two parts)
             timestamp = parts[0] + " " + parts[1]  # e.g., "2024-06-25 13:20:16.451"
-
+            print(timestamp)
             # The values start after the sequence number "<00000>", which we assume is at parts[2]
             values = parts[3:3 + len(sequence_list)]  # Extract the number of values corresponding to the sequence
 
@@ -278,6 +287,7 @@ class OvenMonitor:
             parsed_data = {}
             for i, key in enumerate(sequence_list):
                 parsed_data[key] = values[i]
+                print(values)
 
             # Extract the board number from the filename
             board_number_match = re.search(r'(\d+)', filename)
@@ -327,7 +337,7 @@ class OvenMonitor:
             # Run the logging process every 5 minutes
             while self.monitoring:
                 read_new_data()
-                time.sleep(300)  # Check for new data every 5 minutes
+                time.sleep(1)  # Check for new data every 5 minutes
 
         # Start the logging in a separate thread
         threading.Thread(target=logging_loop, daemon=True).start()
@@ -484,6 +494,7 @@ class EditConfigWindow(tk.Toplevel):
 
 
         # Control limits for P1, P2, T1, T2, Vx, Vz, Ct, Vt
+        # Control limits for P1, P2, T1, T2, Vx, Vz, Ct, Vt
         self.control_limits_frame = tk.LabelFrame(self, text="Control Limits")
         self.control_limits_frame.pack(pady=10, fill="x", padx=10)
 
@@ -506,6 +517,13 @@ class EditConfigWindow(tk.Toplevel):
                 tk.Entry(param_frame, textvariable=high_temp_var, width=10).pack(side="left", padx=5)
                 self.control_limits_vars[param]["low_temp_value"] = low_temp_var
                 self.control_limits_vars[param]["high_temp_value"] = high_temp_var
+            else:
+                # Adding an additional value next to P1, P2, Vx, Vz, Ct, Vt
+                additional_value_var = tk.DoubleVar(value=self.config["board_data"]["control_limits"][param].get("additional_value", 0.0))
+                tk.Label(param_frame, text="Set Value").pack(side="left", padx=5)
+                tk.Entry(param_frame, textvariable=additional_value_var, width=10).pack(side="left", padx=5)
+                self.control_limits_vars[param]["additional_value"] = additional_value_var
+
 
         # Save Button
         self.save_button = tk.Button(self, text="Save Configuration", command=self.save_config)
@@ -566,6 +584,8 @@ class EditConfigWindow(tk.Toplevel):
             if param in ["T1", "T2"]:
                 self.config["board_data"]["control_limits"][param]["low_temp_value"] = vars["low_temp_value"].get()
                 self.config["board_data"]["control_limits"][param]["high_temp_value"] = vars["high_temp_value"].get()
+            else:
+                self.config["board_data"]["control_limits"][param]["additional_value"] = vars["additional_value"].get()
 
         save_config(self.config)
         messagebox.showinfo("Save Configuration", "Configuration saved successfully!")
