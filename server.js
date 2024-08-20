@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const OvenData = require('./models/OvenData');
 const OvenStatus = require('./models/OvenStatus');
 const Event = require('./models/Event'); // Add this line to import the Event model
+const WarningSettings = require('./models/WarningSettings');  // Import the new model
 
 const app = express();
 const server = http.createServer(app);
@@ -75,78 +76,30 @@ async function createOvenCollections() {
         hasOvenControlLimits: { type: Boolean, required: function() { return this.dataType === 'Oven'; } },
         hasBoardControlLimits: { type: Boolean, required: function() { return this.dataType === 'Board'; } },
         boardId: { type: String, required: function() { return this.dataType === 'Board'; } },
-        p1: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        p1UpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        p1LowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        p2: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        p2UpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        p2LowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        t1: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        t1UpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        t1LowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        t2: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        t2UpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        t2LowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vx: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        vxUpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vxLowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vz: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        vzUpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vzLowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        ct: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        ctUpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        ctLowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vt: { type: Number, required: function() { return this.dataType === 'Board'; } },
-        vtUpperControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
-        vtLowerControlLimit: { 
-          type: Number, 
-          required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-        },
+        p1: { type: Number, default: null },
+        p1UpperControlLimit: { type: Number, default: null },
+        p1LowerControlLimit: { type: Number, default: null },
+        p2: { type: Number, default: null },
+        p2UpperControlLimit: { type: Number, default: null },
+        p2LowerControlLimit: { type: Number, default: null },
+        t1: { type: Number, default: null },
+        t1UpperControlLimit: { type: Number, default: null },
+        t1LowerControlLimit: { type: Number, default: null },
+        t2: { type: Number, default: null },
+        t2UpperControlLimit: { type: Number, default: null },
+        t2LowerControlLimit: { type: Number, default: null },
+        vx: { type: Number, default: null },
+        vxUpperControlLimit: { type: Number, default: null },
+        vxLowerControlLimit: { type: Number, default: null },
+        vz: { type: Number, default: null },
+        vzUpperControlLimit: { type: Number, default: null },
+        vzLowerControlLimit: { type: Number, default: null },
+        ct: { type: Number, default: null },
+        ctUpperControlLimit: { type: Number, default: null },
+        ctLowerControlLimit: { type: Number, default: null },
+        vt: { type: Number, default: null },
+        vtUpperControlLimit: { type: Number, default: null },
+        vtLowerControlLimit: { type: Number, default: null },
       }, { collection: collectionName });
       ovenDataSchema.add({ activeID: { type: Number, required: true } });
       const OvenDataCollection = mongoose.model(collectionName, ovenDataSchema);
@@ -185,13 +138,124 @@ function registerSchemaIfNeeded(ovenName) {
   }
 }
 
+async function checkForOutliers(data) {
+  let ovenOutliersCount = 0;
+  let boardsWithOutliers = {};
+
+  for (const d of data) {
+    // Check the status of the oven before processing
+    const ovenStatus = await OvenStatus.findOne({ ovenName: d.ovenId }).exec();
+
+    if (!ovenStatus || ovenStatus.status !== 'Active') {
+      console.log(`Skipping data for oven ${d.ovenId} because it is not active.`);
+      continue; // Skip processing if the oven is not active
+    }
+
+    // Check for oven temperature outliers
+    if (d.dataType === 'Oven' && d.temperature !== undefined) {
+      if (d.temperatureUpperControlLimit !== null && d.temperatureLowerControlLimit !== null) {
+        if (d.temperature > d.temperatureUpperControlLimit || d.temperature < d.temperatureLowerControlLimit) {
+          ovenOutliersCount++;
+          await triggerWarning(d.ovenId, 'Temperature Out of Range');
+        }
+      }
+    }
+
+    // Check for board parameter outliers
+    if (d.dataType === 'Board') {
+      const boardId = d.boardId;
+      if (!boardsWithOutliers[boardId]) {
+        boardsWithOutliers[boardId] = { failures: {}, totalFails: 0 };
+      }
+
+      const parameters = ['p1', 'p2', 't1', 't2', 'vx', 'vz', 'ct', 'vt'];
+
+      parameters.forEach(async param => {
+        if (d[param] !== undefined) {
+          const lowerLimit = d[`${param}LowerControlLimit`];
+          const upperLimit = d[`${param}UpperControlLimit`];
+          if (lowerLimit !== null && upperLimit !== null) {
+            if (d[param] < lowerLimit || d[param] > upperLimit) {
+              if (!boardsWithOutliers[boardId].failures[param]) {
+                boardsWithOutliers[boardId].failures[param] = 0;
+              }
+              boardsWithOutliers[boardId].failures[param]++;
+              boardsWithOutliers[boardId].totalFails++;
+              await triggerWarning(d.ovenId, `${param} Out of Range`);
+            }
+          }
+        }
+      });
+    }
+  }
+
+  console.log(ovenOutliersCount); // Number of oven temperature outliers
+  console.log(boardsWithOutliers); // Log of boards with exceeded limits and parameters
+  // Optional: Store or log outliers here if needed
+}
+
+
+async function triggerWarning(ovenId, failureType) {
+  console.log(`Processing warning for ${ovenId}: ${failureType}`);
+
+  // Fetch or create warning settings for the oven
+  let warningSettings = await WarningSettings.findOne({ ovenName: ovenId }).exec();
+  if (!warningSettings) {
+    warningSettings = new WarningSettings({ ovenName: ovenId });
+  }
+
+  // Check if warnings are enabled for this oven
+  if (!warningSettings.warningsEnabled) {
+    console.log(`Warnings are disabled for oven ${ovenId}.`);
+    return;  // Exit if warnings are disabled
+  }
+
+  // Update the failure tracker
+  warningSettings.failureTracker.count++;
+  warningSettings.failureTracker.failures.push(failureType);
+  
+  // Save the updated settings
+  await warningSettings.save();
+
+  // Send the warning to all connected WebSocket clients
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: 'warning',
+        data: {
+          ovenId,
+          failureType,
+          failureTracker: {
+            count: warningSettings.failureTracker.count,
+            failures: [...new Set(warningSettings.failureTracker.failures)], // Remove duplicates
+          }
+        }
+      }));
+    }
+  });
+}
+// Map to store WebSocket connections by clientId
+const activeWebSockets = new Map();
 // Server-side WebSocket handling
-wss.on('connection', (ws) => {
+wss.on('connection', async(ws) => {
   let clientId;
   console.log('Client connected');
+  // Check for any existing warnings for all ovens and send them to the newly connected client
+  const allWarnings = await WarningSettings.find({}).exec();  // Find all warning documents
+  allWarnings.forEach(warningSettings => {
+    if (warningSettings.failureTracker.count > 0) {
+      ws.send(JSON.stringify({
+        type: 'warning',
+        data: {
+          ovenId: warningSettings.ovenName,
+          failureType: "All Failures",
+          failureTracker: warningSettings.failureTracker,
+        }
+      }));
+    }
+  });
   ws.on('message', async message => {
     console.log('Received: %s', message);
-
     const parsedData = JSON.parse(message);
     if (parsedData.type === 'identify') {
       clientId = parsedData.clientId;
@@ -206,6 +270,7 @@ wss.on('connection', (ws) => {
           client.send(JSON.stringify({ type: 'statusUpdate', data: { ovenName: clientId, status: 'Idle', timestamp: new Date().toISOString() } }));
         }
       });
+      activeWebSockets.set(clientId, ws); // Store the WebSocket connection
     } else if (parsedData.type === 'ovenActive') {
       const ovenName = parsedData.data.ovenId;
 
@@ -242,6 +307,20 @@ wss.on('connection', (ws) => {
         { status: 'Idle', timestamp: new Date().toISOString() },
         { upsert: true }
       );
+      // Reset the failure tracker when the oven is no longer active
+      const result = await WarningSettings.findOneAndUpdate(
+        { ovenName: ovenName },
+        { $set: { 'failureTracker.count': 0, 'failureTracker.failures': [] } },
+        { new: true }
+      );
+
+      if (!result) {
+        console.error(`Failed to reset failure tracker for oven: ${ovenName}`);
+      } else {
+        console.log(`Successfully reset failure tracker for oven: ${ovenName}`);
+        console.log(result); // Log the updated document to verify the changes
+      }
+
 
       wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -302,6 +381,8 @@ wss.on('connection', (ws) => {
           newDataObj.activeID = activeID;
           await activeOvenCollection.insertOne(newDataObj);
         }
+        // Perform outlier detection
+        await checkForOutliers([newData]);
 
         wss.clients.forEach(client => {
           if (client.readyState === WebSocket.OPEN) {
@@ -319,10 +400,17 @@ wss.on('connection', (ws) => {
     if (clientId) {
       console.log(`Client disconnected: ${clientId}`);
       activeOvens.delete(clientId);
+      activeWebSockets.delete(clientId); // Remove the WebSocket connection
       await OvenStatus.findOneAndUpdate(
         { ovenName: clientId },
         { status: 'Disconnected', timestamp: new Date().toISOString() },
         { upsert: true }
+      );
+      // Reset the failure tracker when the oven is no longer active
+      const result = await WarningSettings.findOneAndUpdate(
+        { ovenName: clientId },
+        { $set: { 'failureTracker.count': 0, 'failureTracker.failures': [] } },
+        { new: true }
       );
 
       wss.clients.forEach(client => {
@@ -348,6 +436,9 @@ app.get('/devices',(req, res) => {
 });
 app.get('/fileManager', (req, res) => {
   res.sendFile(path.join(__dirname + '/views/filelog.html'));
+});
+app.get('/settings', (req, res) => {
+  res.sendFile(path.join(__dirname + '/views/settings.html'));
 });
 app.get('/data', (req, res) => {
   res.send('WebSocket server running');
@@ -709,6 +800,57 @@ app.get('/closestEvent', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Endpoint to toggle warnings for a specific oven
+app.post('/api/oven/:ovenId/toggleWarnings', async (req, res) => {
+  const { ovenId } = req.params;
+  const { enableWarnings } = req.body; // Expecting a boolean value in the request body
+  console.log(ovenId)
+  try {
+    const updatedSettings = await WarningSettings.findOneAndUpdate(
+      { ovenName: ovenId },
+      { $set: { warningsEnabled: enableWarnings } }
+    );
+
+    if (!updatedSettings) {
+      return res.status(404).json({ error: 'Oven not found' });
+    }
+
+    res.json({ message: `Warnings for oven ${ovenId} have been ${enableWarnings ? 'disabled' : 'enabled'}.` });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update warning settings.' });
+  }
+});
+
+
+// Endpoint to end the connection with a specific oven
+app.post('/api/oven/:ovenId/endConnection', async (req, res) => {
+  const { ovenId } = req.params;
+
+  try {
+    // Remove the oven from the active ovens map
+    activeOvens.delete(ovenId);
+
+    // Force close the WebSocket connection if it exists
+    const ws = activeWebSockets.get(ovenId);
+    if (ws) {
+      ws.terminate(); // Forcefully close the WebSocket connection
+      activeWebSockets.delete(ovenId); // Remove it from the active connections map
+    }
+
+    // Update the oven's status in the database
+    await OvenStatus.findOneAndUpdate(
+      { ovenName: ovenId },
+      { status: 'Disconnected', timestamp: new Date().toISOString() }
+    );
+
+    res.json({ message: `Connection with oven ${ovenId} has been ended.` });
+  } catch (err) {
+    console.error(`Failed to end connection for oven ${ovenId}:`, err);
+    res.status(500).json({ error: 'Failed to end connection.' });
+  }
+});
+
 
 const PORT = 3000;
 const HOST = '0.0.0.0';

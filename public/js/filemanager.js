@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sumFailedBoards += failedBoards;
   
         row.innerHTML = `
-          <td>Run ${run.activeID}</td>
+          <td>${run.activeID}</td>
           <td>${startTimestamp}</td>
           <td>${endTimestamp}</td>
           <td>${totalBoards}</td>

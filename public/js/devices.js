@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeOvens = {};
   const timers = {}; // Object to store the intervals for each oven
 
+
   // Assume this information is known or fetched from the server
   const maxBoardsPerOven = {
     "Gollum": 5,
@@ -144,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         title: `Category ${option} Over Time`,
         uirevision: 'true',
         modebar: {
-          add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+          add: ['hovercompare'] // Explicitly add hover comparison tools
         },
         xaxis: {
           title: 'Index',
@@ -162,6 +163,89 @@ document.addEventListener('DOMContentLoaded', async () => {
   
       const allTraces = [...traces, upperControlTrace, lowerControlTrace];
       Plotly.react(plotlyChart, allTraces, layout);
+    } else if (type === 'Oven') {
+      const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
+      const filteredData = chartData.filter(d => d.dataType === 'Oven' && d[normalizedOption] !== undefined);
+        const trace = {
+          x: filteredData.map(d => d.timestamp),
+          y: filteredData.map(d => d[normalizedOption]),
+          mode: 'lines',
+          name: option,
+          connectgaps: true
+        };
+  
+        const upperControlTrace = {
+          x: filteredData.map(d => d.timestamp),
+          y: filteredData.map(d => d[normalizedOption + 'UpperControlLimit']),
+          mode: 'lines',
+          name: 'Upper Control Limit',
+          line: {
+            dash: 'dash',
+            color: 'red'
+          }
+        };
+  
+        const lowerControlTrace = {
+          x: filteredData.map(d => d.timestamp),
+          y: filteredData.map(d => d[normalizedOption + 'LowerControlLimit']),
+          mode: 'lines',
+          name: 'Lower Control Limit',
+          line: {
+            dash: 'dash',
+            color: 'blue'
+          }
+        };
+  
+        const crossingPoints = filteredData
+        .filter(d => 
+          d[normalizedOption] !== undefined &&
+          (
+            (d[normalizedOption + 'UpperControlLimit'] !== null && d[normalizedOption] > d[normalizedOption + 'UpperControlLimit']) ||
+            (d[normalizedOption + 'LowerControlLimit'] !== null && d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])
+          )
+        )
+        .map((d) => ({
+          x: d.timestamp,
+          y: d[normalizedOption],
+        }));
+  
+        const crossingTrace = {
+          x: crossingPoints.map(d => d.x),
+          y: crossingPoints.map(d => d.y),
+          mode: 'markers',
+          name: 'Crossing Points',
+          marker: { color: 'red', size: 10 },
+        };
+  
+        // Calculate the mean and standard deviation of the y-values
+        const meanYValue = trace.y.reduce((a, b) => a + b, 0) / trace.y.length;
+        const stdDev = Math.sqrt(trace.y.map(y => Math.pow(y - meanYValue, 2)).reduce((a, b) => a + b) / trace.y.length);
+
+        // Set the y-axis range based on mean ± 3*stdDev (or some other factor)
+        const yAxisRange = [meanYValue - 3 * stdDev, meanYValue + 3 * stdDev];
+  
+        const layout = {
+          title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
+          uirevision: 'true',
+          modebar: {
+            add: ['hovercompare'] // Explicitly add hover comparison tools
+          },
+          xaxis: {
+            title: 'Time',
+            type: 'category',
+            dtick: 1,
+          },
+          yaxis: {
+            title: option,
+            autorange: false,
+            range: yAxisRange
+          },
+          xaxis: {
+            range: [filteredData.length - (filteredData.length - 25), filteredData.length - filteredData.length],
+          }
+        };
+  
+        Plotly.react(plotlyChart, [trace, upperControlTrace, lowerControlTrace, crossingTrace], layout);
     } else {
       const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
       if (option === 'All') {
@@ -191,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} Over Time`,
           uirevision: 'true',
           modebar: {
-            add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+            add: ['hovercompare'] // Explicitly add hover comparison tools
           },
           xaxis: {
             title: 'Time',
@@ -215,17 +299,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   
         Plotly.react(plotlyChart, traces, layout);
       } else {
-        const controlLimits = {
-          temperature: { value: 10 },
-          p1: { value: 50 },
-          p2: { value: 50 },
-          t1: { value: 50 },
-          t2: { value: 50 },
-          vx: { value: 50 },
-          vz: { value: 50 },
-          ct: { value: 50 },
-          vt: { value: 50 },
-        };
         const filteredData = chartData.filter(d => d[normalizedOption] !== undefined);
         const trace = {
           x: filteredData.map(d => d.timestamp),
@@ -260,8 +333,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const crossingPoints = filteredData
         .filter(d => 
           d[normalizedOption] !== undefined &&
-          ((d.hasOvenControlLimits && (d[normalizedOption] > d[normalizedOption + 'UpperControlLimit'] || d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])) ||
-           (d.hasBoardControlLimits && (d[normalizedOption] > d[normalizedOption + 'UpperControlLimit'] || d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])))
+          (
+            (d[normalizedOption + 'UpperControlLimit'] !== null && d[normalizedOption] > d[normalizedOption + 'UpperControlLimit']) ||
+            (d[normalizedOption + 'LowerControlLimit'] !== null && d[normalizedOption] < d[normalizedOption + 'LowerControlLimit'])
+          )
         )
         .map((d) => ({
           x: d.timestamp,
@@ -276,14 +351,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           marker: { color: 'red', size: 10 },
         };
   
-        const firstYValue = trace.y[0];
-        const yAxisRange = [firstYValue - controlLimits[normalizedOption].value, firstYValue + controlLimits[normalizedOption].value];
+        // Calculate the mean and standard deviation of the y-values
+        const meanYValue = trace.y.reduce((a, b) => a + b, 0) / trace.y.length;
+        const stdDev = Math.sqrt(trace.y.map(y => Math.pow(y - meanYValue, 2)).reduce((a, b) => a + b) / trace.y.length);
+
+        // Set the y-axis range based on mean ± 3*stdDev (or some other factor)
+        const yAxisRange = [meanYValue - 3 * stdDev, meanYValue + 3 * stdDev];
   
         const layout = {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${option.charAt(0).toUpperCase() + option.slice(1)} ${type === 'Board' ? `Board ${boardNum}` : ''} Over Time`,
           uirevision: 'true',
           modebar: {
-            add: ['hovercompare', 'hoverclosest'] // Explicitly add hover comparison tools
+            add: ['hovercompare'] // Explicitly add hover comparison tools
           },
           xaxis: {
             title: 'Time',
@@ -447,6 +526,83 @@ function updateEventInfo(data) {
   } else if (daysDifference === 0) {
     eventInfoDiv.textContent = `Today.`;
   }
+}
+
+
+function displayWarning(ovenId, failureType, failureTracker) {
+  console.log('Displaying warning:', ovenId, failureType, failureTracker); // Debugging
+
+  // Create or get the warning container
+  let warningContainer = document.getElementById('warning-container');
+  if (!warningContainer) {
+    warningContainer = document.createElement('div');
+    warningContainer.id = 'warning-container';
+    document.body.appendChild(warningContainer);
+
+    // Style the warning container
+    warningContainer.style.position = 'fixed';
+    warningContainer.style.top = '20px';
+    warningContainer.style.right = '20px';
+    warningContainer.style.width = '300px';
+    warningContainer.style.maxHeight = '30vh'; // 80% of the viewport height
+    warningContainer.style.overflowY = 'auto';
+    warningContainer.style.backgroundColor = '##eef2f800';
+    warningContainer.style.padding = '10px';
+    warningContainer.style.borderRadius = '5px';
+    warningContainer.style.zIndex = '10000'; // Ensure it appears on top
+  }
+
+  // Get or create the warning box for this oven
+  let warningBox = document.getElementById(`warning-${ovenId}`);
+  if (!warningBox) {
+    warningBox = document.createElement('div');
+    warningBox.id = `warning-${ovenId}`;
+    warningBox.className = 'warning-box';
+    warningContainer.appendChild(warningBox);
+  }
+
+  // Create a list of failures if the failureTracker exists
+  let failuresList = '';
+  if (failureTracker) {
+    failuresList = `<br><small>Failures: ${failureTracker.count}</small>`;
+  }
+
+  // Update the warning box content
+  warningBox.innerHTML = `
+    <strong>${ovenId}:</strong> ${failureType}${failuresList}
+    <button class="close-button">X</button>
+  `;
+
+  // Attach the click event to the close button after the content is updated
+  const closeButton = warningBox.querySelector('.close-button');
+  closeButton.addEventListener('click', () => {
+    warningBox.remove();
+  });
+
+  // Style the warning box
+  warningBox.style.backgroundColor = '#e94a4a';
+  warningBox.style.color = 'white';
+  warningBox.style.padding = '10px';
+  warningBox.style.borderRadius = '5px';
+  warningBox.style.boxShadow = '0px 0px 5px rgba(0,0,0,0.3)';
+  warningBox.style.marginBottom = '10px'; // Space between warning boxes
+
+  // Style the close button
+  closeButton.style.backgroundColor = '#e94a4a';
+  closeButton.style.border = 'none';
+  closeButton.style.color = '#fff';
+  closeButton.style.fontSize = '16px';
+  closeButton.style.fontWeight = 'bold';
+  closeButton.style.cursor = 'pointer';
+  closeButton.style.marginLeft = '10px';
+  closeButton.style.borderRadius = '50%';
+  closeButton.style.width = '20px';
+  closeButton.style.height = '20px';
+  closeButton.style.textAlign = 'center';
+  closeButton.style.lineHeight = '20px';
+  closeButton.style.position = 'absolute';
+  closeButton.style.top = '15px';
+  closeButton.style.right = '15px';
 }
 
   // Fetch oven data
@@ -1445,6 +1601,9 @@ function setupDropdownEventListeners(dropdownId,oven) {
       console.log('Oven status updated:', message.data);
       const { ovenName, status, timestamp } = message.data;
       updateOvenStatus(ovenName, status, timestamp);
+    } else if (message.type === 'warning') {
+      const { ovenId, failureType, failureTracker } = message.data;
+      displayWarning(ovenId, failureType, failureTracker); // Pass failureTracker to the displayWarning function
     }
   });
 });

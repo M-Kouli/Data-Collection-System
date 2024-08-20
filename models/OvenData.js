@@ -16,78 +16,30 @@ const ovenDataSchema = new mongoose.Schema({
   hasOvenControlLimits: { type: Boolean, required: function() { return this.dataType === 'Oven'; } },
   hasBoardControlLimits: { type: Boolean, required: function() { return this.dataType === 'Board'; } },
   boardId: { type: String, required: function() { return this.dataType === 'Board'; } },
-  p1: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  p1UpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  p1LowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  p2: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  p2UpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  p2LowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  t1: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  t1UpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  t1LowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  t2: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  t2UpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  t2LowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vx: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  vxUpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vxLowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vz: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  vzUpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vzLowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  ct: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  ctUpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  ctLowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vt: { type: Number, required: function() { return this.dataType === 'Board'; } },
-  vtUpperControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
-  vtLowerControlLimit: { 
-    type: Number, 
-    required: function() { return this.dataType === 'Board' && this.hasBoardControlLimits === true; } 
-  },
+  p1: { type: Number, default: null },
+  p1UpperControlLimit: { type: Number, default: null },
+  p1LowerControlLimit: { type: Number, default: null },
+  p2: { type: Number, default: null },
+  p2UpperControlLimit: { type: Number, default: null },
+  p2LowerControlLimit: { type: Number, default: null },
+  t1: { type: Number, default: null },
+  t1UpperControlLimit: { type: Number, default: null },
+  t1LowerControlLimit: { type: Number, default: null },
+  t2: { type: Number, default: null },
+  t2UpperControlLimit: { type: Number, default: null },
+  t2LowerControlLimit: { type: Number, default: null },
+  vx: { type: Number, default: null },
+  vxUpperControlLimit: { type: Number, default: null },
+  vxLowerControlLimit: { type: Number, default: null },
+  vz: { type: Number, default: null },
+  vzUpperControlLimit: { type: Number, default: null },
+  vzLowerControlLimit: { type: Number, default: null },
+  ct: { type: Number, default: null },
+  ctUpperControlLimit: { type: Number, default: null },
+  ctLowerControlLimit: { type: Number, default: null },
+  vt: { type: Number, default: null },
+  vtUpperControlLimit: { type: Number, default: null },
+  vtLowerControlLimit: { type: Number, default: null },
 });
 
 module.exports = mongoose.model('OvenData', ovenDataSchema);

@@ -6,6 +6,7 @@ import json
 import serial
 import re
 import os
+from datetime import datetime
 
 # Define the CONFIG File
 CONFIG_FILE = "oven_config.json"
@@ -67,7 +68,7 @@ class OvenMonitor:
         self.temperature = 0
         self.board_number = 1
         self.last_data_time = time.time()
-        self.BOARD_RESET_TIME = 20 * 60  # 20 minutes in seconds
+        self.BOARD_RESET_TIME = 0.1 * 60  # 20 minutes in seconds
 
     def establish_connection(self, oven_name):
         try:
@@ -215,6 +216,9 @@ class OvenMonitor:
             self.ser.write((parsed_data + '\n').encode('utf-8'))
             print(f"Sent to Arduino: {parsed_data}")
 
+            # Delay to allow Arduino to process the data
+            time.sleep(5)
+
 
         def parse_treebeard_format(line,filename):
             # Define a sequence mapping based on your requirement
@@ -262,7 +266,7 @@ class OvenMonitor:
                     parsed_data[key] = "N/A"
 
             # Convert the parsed data to a string that can be sent to Arduino
-            parsed_data_str = f"Board:{parsed_data['board_number']} {parsed_data['timestamp']} " + " ".join(f"{key}:{parsed_data[key]}" for key in field_mapping.keys())
+            parsed_data_str = f"Board:{parsed_data['board_number']} " + " ".join(f"{key}:{parsed_data[key]}" for key in field_mapping.keys())
 
             return parsed_data_str
 
@@ -294,7 +298,7 @@ class OvenMonitor:
             board_number = board_number_match.group(1) if board_number_match else "Unknown"
 
             # Convert the parsed data to a string that can be sent to Arduino, including the board number
-            parsed_data_str = f"Board:{board_number} {timestamp} " + " ".join(f"{key}:{parsed_data[key]}" for key in sequence_list)
+            parsed_data_str = f"Board: {board_number} " + " ".join(f"{key}:{parsed_data[key]}" for key in sequence_list)
 
             return parsed_data_str
 
@@ -354,6 +358,13 @@ class OvenMonitor:
                 while True:
                     if ser.in_waiting > 0:
                         data = ser.read(ser.in_waiting)
+                        # Time check before attempting to read data
+                        time_difference = time.time() - self.last_data_time
+                        print(f"[read_data_from_com] Time since last data: {time_difference} seconds")
+
+                        if time_difference > self.BOARD_RESET_TIME:
+                            print(f"[read_data_from_com] No data received for {self.BOARD_RESET_TIME / 60} minutes. Resetting board number counter.")
+                            self.board_number = 1  # Reset board number counter
                         return data
                     time.sleep(0.1)  # Small delay to avoid busy waiting
 
@@ -386,35 +397,44 @@ class OvenMonitor:
             except Exception as e:
                 print(f"Error parsing data: {e}")
                 return None
+        def format_and_send_data(parsed_data):
+            # Get current time in the required format
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            board_str = f"Board: {self.board_number:02} "
+            data_str = " ".join([f"{key}:{int(value)}" for key, value in parsed_data.items()])
 
+            # Combine the strings into the final format
+            message = board_str + data_str
+            print(f"Sending to Arduino: {message}")
+
+            # Send the formatted message to the Arduino
+            self.ser.write((message + '\n').encode('ascii'))
         def logging_loop():
             while self.monitoring:
+                # Optionally, read Arduino responses for debugging
+                while self.ser.in_waiting > 0:
+                    response = self.ser.readline().decode().strip()
+                    print(f"Arduino response: {response}")
                 data = read_data_from_com(com_port)
 
                 if data:
-                    self.last_data_time = time.time()
                     print(f"Raw data: {data.hex()}")
 
                     parsed_data = parse_e6_data(data)
 
                     if parsed_data:
+                        self.last_data_time = time.time()  # Update last data time only when data is received
+                        print(self.last_data_time)
                         print(f"Board {self.board_number} Data:")
                         for key, value in parsed_data.items():
                             print(f"{key}: {value}")
-
+                        # Format and send the data to Arduino
+                        format_and_send_data(parsed_data)
                         self.board_number += 1  # Increment board number after successful data processing
-
                     else:
                         print("Data could not be parsed correctly.")
                 else:
                     print("No data received")
-
-                # Check if 20 minutes have passed without receiving data
-                if time.time() - self.last_data_time > self.BOARD_RESET_TIME:
-                    print("No data received for 20 minutes. Resetting board number counter.")
-                    self.board_number = 1  # Reset board number counter
-
-                time.sleep(1)  # Small delay between loops
 
         # Start the logging in a separate thread to allow the UI to remain responsive
         threading.Thread(target=logging_loop, daemon=True).start()
@@ -424,18 +444,45 @@ class EditConfigWindow(tk.Toplevel):
     def __init__(self, master):
         super().__init__(master)
         self.title("Edit Configuration")
-        self.geometry("400x1000")
+        self.geometry("400x600")  # Set a fixed window size
         self.config = master.config
 
+        # Create a canvas to contain the scrollable frame
+        self.canvas = tk.Canvas(self)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Add a vertical scrollbar linked to the canvas
+        self.scrollbar = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Create a frame inside the canvas to hold the configuration widgets
+        self.scrollable_frame = tk.Frame(self.canvas)
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+
+        # Add the scrollable frame to the canvas
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Configure the canvas to respond to scrollbar movement
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # Add configuration widgets inside the scrollable frame
+        self.create_config_widgets()
+
+    def create_config_widgets(self):
         # Logging Board Data Checkbox
-        self.logging_frame = tk.LabelFrame(self, text="Logging")
+        self.logging_frame = tk.LabelFrame(self.scrollable_frame, text="Logging")
         self.logging_frame.pack(pady=10, fill="x", padx=10)
         self.log_board_data_var = tk.BooleanVar(value=self.config["log_board_data"])
         self.log_board_data_checkbox = tk.Checkbutton(self.logging_frame, text="Log Board Data", variable=self.log_board_data_var)
-        self.log_board_data_checkbox.pack(anchor="w",pady=5)
+        self.log_board_data_checkbox.pack(anchor="w", pady=5)
 
         # Temperature Control Settings
-        self.temperature_frame = tk.LabelFrame(self, text="Temperature Control")
+        self.temperature_frame = tk.LabelFrame(self.scrollable_frame, text="Temperature Control")
         self.temperature_frame.pack(pady=10, fill="x", padx=10)
 
         self.allow_control_limits_var = tk.BooleanVar(value=self.config["temperature_control"]["allow_control_limits"])
@@ -459,7 +506,7 @@ class EditConfigWindow(tk.Toplevel):
         tk.Entry(self.temperature_frame, textvariable=self.ramp_rate_var).pack(fill="x", pady=5)
 
         # Board Data Settings
-        self.board_frame = tk.LabelFrame(self, text="Board Data")
+        self.board_frame = tk.LabelFrame(self.scrollable_frame, text="Board Data")
         self.board_frame.pack(pady=10, fill="x", padx=10)
 
         self.modbus_burnsys_var = tk.StringVar(value=self.config["board_data"]["modbus_burnsys"])
@@ -491,11 +538,8 @@ class EditConfigWindow(tk.Toplevel):
 
         self.update_board_data_options()
 
-
-
         # Control limits for P1, P2, T1, T2, Vx, Vz, Ct, Vt
-        # Control limits for P1, P2, T1, T2, Vx, Vz, Ct, Vt
-        self.control_limits_frame = tk.LabelFrame(self, text="Control Limits")
+        self.control_limits_frame = tk.LabelFrame(self.scrollable_frame, text="Control Limits")
         self.control_limits_frame.pack(pady=10, fill="x", padx=10)
 
         self.control_limits_vars = {}
@@ -524,9 +568,8 @@ class EditConfigWindow(tk.Toplevel):
                 tk.Entry(param_frame, textvariable=additional_value_var, width=10).pack(side="left", padx=5)
                 self.control_limits_vars[param]["additional_value"] = additional_value_var
 
-
         # Save Button
-        self.save_button = tk.Button(self, text="Save Configuration", command=self.save_config)
+        self.save_button = tk.Button(self.scrollable_frame, text="Save Configuration", command=self.save_config)
         self.save_button.pack(pady=20)
 
     def toggle_treebeard_options(self):
@@ -546,7 +589,6 @@ class EditConfigWindow(tk.Toplevel):
         self.folder_path_button.pack_forget()
         self.com_port_label.pack_forget()
         self.com_port_entry.pack_forget()
-
 
         if self.modbus_burnsys_var.get() == "Modbus":
             # Show folder path input
@@ -589,6 +631,7 @@ class EditConfigWindow(tk.Toplevel):
 
         save_config(self.config)
         messagebox.showinfo("Save Configuration", "Configuration saved successfully!")
+
 
 # UI Class
 class OvenApp(tk.Tk):

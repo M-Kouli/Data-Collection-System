@@ -10,14 +10,16 @@
     "board_data": {
         "modbus_burnsys": "Burnsys",
         "is_treebeard": false,
-        "folder_path": "E:/Saruman/Output",
-        "allow_control_limits": false,
+        "folder_path": "D:/Treebeard",
+        "allow_control_limits": true,
         "control_limits": {
             "P1": {
-                "plus_minus": 0.0
+                "plus_minus": 3.0,
+                "additional_value": 20.0
             },
             "P2": {
-                "plus_minus": 0.0
+                "plus_minus": 0.0,
+                "additional_value": 0.0
             },
             "T1": {
                 "plus_minus": 0.0,
@@ -30,19 +32,23 @@
                 "high_temp_value": 0.0
             },
             "Vx": {
-                "plus_minus": 0.0
+                "plus_minus": 0.0,
+                "additional_value": 0.0
             },
             "Vz": {
-                "plus_minus": 0.0
+                "plus_minus": 0.0,
+                "additional_value": 0.0
             },
             "Ct": {
-                "plus_minus": 0.0
+                "plus_minus": 0.0,
+                "additional_value": 0.0
             },
             "Vt": {
-                "plus_minus": 0.0
+                "plus_minus": 0.0,
+                "additional_value": 0.0
             }
         },
         "sequence": "P1 P2 T1 T2 Vx Vz Ct Vt",
-        "com_port": "COM3"
+        "com_port": "COM17"
     }
 }

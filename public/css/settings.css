@@ -1,0 +1,174 @@
+.settingsHeaderName{
+    padding: 1em;
+}
+
+.settingsHeaderName h1 {
+    font-size: 2vw;
+    font-weight: 500;
+}
+
+.settingsContainer {
+    display: flex;
+    padding: 1em;
+    gap:2em;
+}
+
+.manageOvens {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    min-width: 25em;
+}
+
+.saveOven {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.saveOven h1{
+    font-size: 1.2em;
+    font-weight: 500;
+    padding-bottom: 1em;
+}
+
+.editOven {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.manageOvens form {
+    display: flex;
+    flex-direction: column;
+}
+
+.manageOvens form label {
+    margin-bottom: 8px;
+}
+
+.manageOvens form input[type="text"] {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.manageOvens form button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.manageOvens form button:hover {
+    background-color: #218838;
+}
+
+.editOven h2{
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.editOven ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+    overflow-y: auto; /* Allows scrolling if content exceeds the height */
+    height: 100%;
+}
+
+.editOven li {
+    background: #fff;
+    margin-bottom: 10px;
+    padding: 0.3em 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.editOven li button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.editOven li button:hover {
+    background-color: #c82333;
+}
+
+.editOven li button.edit {
+    background-color: #ffc107;
+    margin-right: 10px;
+}
+
+.editOven li button.edit:hover {
+    background-color: #e0a800;
+}
+
+
+.manageSettings{
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+}
+
+.manageSettings h1{
+    font-size: 1.2em;
+    font-weight: 500;
+    padding-bottom: 1em;
+}
+
+.settings-container li{
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0.3em 0;
+    gap: 2em;
+}
+
+.settings-container button.disable-warnings {
+    background-color: #ffc107;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 1em;
+}
+
+.settings-container button.disable-warnings:hover {
+    background-color: #e0a800;
+    
+}
+
+.settings-container button.end-connection {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.settings-container button.end-connection:hover {
+    background-color: #c82333;
+}

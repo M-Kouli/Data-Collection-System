@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title> DCS </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/settings.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&amp;display=swap">
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="logo-details">
+            <i class='bx bx-game icon'></i>
+            <div class="logo_name">CB PacDash</div>
+            <i class='bx bx-menu' id="btn"></i>
+        </div>
+        <ul class="nav-list">
+            <li>
+                <a href="/">
+                    <i class='bx bx-grid-alt'></i>
+                    <span class="links_name">Dashboard</span>
+                </a>
+                <span class="tooltip">Dashboard</span>
+            </li>
+            <li>
+                <a href="/devices">
+                    <i class='bx bx-devices'></i>
+                    <span class="links_name">Devices</span>
+                </a>
+                <span class="tooltip">Devices</span>
+            </li>
+            <li>
+                <a href="/fileManager">
+                    <i class='bx bx-folder'></i>
+                    <span class="links_name">File Manager</span>
+                </a>
+                <span class="tooltip">Files</span>
+            </li>
+            <li>
+                <a href="#">
+                    <i class='bx bx-cog'></i>
+                    <span class="links_name">Settings</span>
+                </a>
+                <span class="tooltip">Settings</span>
+            </li>
+            <li>
+                <a href="#">
+                    <i class='bx bx-info-circle'></i>
+                    <span class="links_name">About</span>
+                </a>
+                <span class="tooltip">About</span>
+            </li>
+        </ul>
+    </div>
+    <section class="home-section">
+        <div class="settingsHeaderName">
+            <h1>Settings</h1>
+        </div>
+        <div class="settingsContainer">
+            <div class="manageOvens">
+                <div class="saveOven">
+                    <h1>Manage Ovens</h1>
+                    <form id="ovenForm">
+                        <input type="hidden" id="ovenId">
+                        <label for="name">Oven Name:</label>
+                        <input type="text" id="name" placeholder="Enter oven name" required autocomplete="off">
+                        <label for="category">Category:</label>
+                        <input type="text" id="category" placeholder="Enter category" required autocomplete="off">
+                        <button type="submit">Save Oven</button>
+                    </form>
+                </div>
+
+                <div class="editOven">
+                    <h2>Ovens List</h2>
+                    <ul id="ovensList"></ul>
+                </div>
+
+            </div>
+            <div class="manageSettings">
+                <h1>Manage Connection</h1>
+            </div>
+
+        </div>
+    </section>
+    <!-- Include your script file -->
+    <script src="/js/front.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ovenForm = document.getElementById('ovenForm');
+            const ovensList = document.getElementById('ovensList');
+            const manageSettingsDiv = document.querySelector('.manageSettings'); // Select the manageSettings div
+            const ovenIdInput = document.getElementById('ovenId');
+            const nameInput = document.getElementById('name');
+            const categoryInput = document.getElementById('category');
+        
+            async function fetchOvens() {
+                const response = await fetch('/ovens');
+                const ovens = await response.json();
+                ovensList.innerHTML = '';
+        
+                ovens.forEach(oven => {
+                    const li = document.createElement('li');
+                    li.textContent = `${oven.name} (${oven.category})`;
+        
+                    // Create a div to hold the buttons
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'button-container';
+        
+                    // Create the Edit button
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.className = 'edit';
+                    editButton.onclick = () => {
+                        ovenIdInput.value = oven._id;
+                        nameInput.value = oven.name;
+                        categoryInput.value = oven.category;
+                    };
+        
+                    // Create the Delete button
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = async () => {
+                        await fetch(`/ovens/${oven._id}`, {
+                            method: 'DELETE'
+                        });
+                        fetchOvens();
+                    };
+        
+                    // Append the buttons to the buttonContainer div
+                    buttonContainer.appendChild(editButton);
+                    buttonContainer.appendChild(deleteButton);
+        
+                    // Append the buttonContainer div to the list item
+                    li.appendChild(buttonContainer);
+        
+                    // Append the list item to the ovens list
+                    ovensList.appendChild(li);
+        
+                    // Create a separate div for the disable warnings and end connection buttons under manageSettings
+                    const settingsContainer = document.createElement('div');
+                    settingsContainer.className = 'settings-container';
+                    const Manageli = document.createElement('li');
+                    Manageli.textContent = `${oven.name}:`;
+        
+                    const disableWarningsButton = document.createElement('button');
+                    disableWarningsButton.textContent = 'Disable Warnings';
+                    disableWarningsButton.className = 'disable-warnings';
+                    disableWarningsButton.onclick = async () => {
+                        await fetch(`/api/oven/${oven.name}/toggleWarnings`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ enableWarnings: false })
+                        });
+                    };
+        
+                    const endConnectionButton = document.createElement('button');
+                    endConnectionButton.textContent = 'End Connection';
+                    endConnectionButton.className = 'end-connection';
+                    endConnectionButton.onclick = async () => {
+                        await fetch(`/api/oven/${oven.name}/endConnection`, {
+                            method: 'POST'
+                        });
+                    };
+                    const buttonsContainer = document.createElement('div');
+                    // Append the settings buttons to the settingsContainer div
+                    buttonsContainer.appendChild(disableWarningsButton);
+                    buttonsContainer.appendChild(endConnectionButton);
+                    Manageli.appendChild(buttonsContainer);
+        
+                    settingsContainer.appendChild(Manageli)
+
+                    // Append the settingsContainer div to the manageSettings div
+                    manageSettingsDiv.appendChild(settingsContainer);
+                });
+            }
+        
+            ovenForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const ovenId = ovenIdInput.value;
+                const name = nameInput.value;
+                const category = categoryInput.value;
+                const method = ovenId ? 'PUT' : 'POST';
+                const url = ovenId ? `/ovens/${ovenId}` : '/ovens';
+                await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        category
+                    }),
+                });
+                ovenForm.reset();
+                fetchOvens();
+            };
+        
+            fetchOvens();
+        });
+        </script>
+        
+</body>

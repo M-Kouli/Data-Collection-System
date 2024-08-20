@@ -213,6 +213,276 @@ void sendActiveTemperatureData(double temperature, float lowerTempValue, float h
   client.send(output);
   Serial.println("Sent active temperature data: " + output);
 }
+void handleBoardData(String boardData, double currentTemperature, float upperControlLimit, float lowerControlLimit) {
+    if (boardData.startsWith("Board:")) {
+        // Initialize variables with default values representing "no value"
+        int boardNumber = -1;
+        int P1 = -1, P2 = -1, T1 = -1, T2 = -1, Vx = -1, Vz = -1, Ct = -1, Vt = -1;
+        char timestamp[25];
+
+        // Tokenize the input string
+        char inputCopy[boardData.length() + 1];
+        boardData.toCharArray(inputCopy, boardData.length() + 1);
+
+        char* token = strtok(inputCopy, " :");
+        while (token != nullptr) {
+            if (strcmp(token, "Board") == 0) {
+                token = strtok(nullptr, " :");
+                boardNumber = atoi(token);
+            } else if (strcmp(token, "P1") == 0) {
+                token = strtok(nullptr, " :");
+                P1 = atoi(token);
+            } else if (strcmp(token, "P2") == 0) {
+                token = strtok(nullptr, " :");
+                P2 = atoi(token);
+            } else if (strcmp(token, "T1") == 0) {
+                token = strtok(nullptr, " :");
+                T1 = atoi(token);
+            } else if (strcmp(token, "T2") == 0) {
+                token = strtok(nullptr, " :");
+                T2 = atoi(token);
+            } else if (strcmp(token, "Vx") == 0) {
+                token = strtok(nullptr, " :");
+                Vx = atoi(token);
+            } else if (strcmp(token, "Vz") == 0) {
+                token = strtok(nullptr, " :");
+                Vz = atoi(token);
+            } else if (strcmp(token, "Ct") == 0) {
+                token = strtok(nullptr, " :");
+                Ct = atoi(token);
+            } else if (strcmp(token, "Vt") == 0) {
+                token = strtok(nullptr, " :");
+                Vt = atoi(token);
+            }
+            token = strtok(nullptr, " :");
+        }
+
+        // Debug output
+        Serial.println("Debug: Tokenized extraction results:");
+        Serial.print("Board Number: "); Serial.println(boardNumber);
+        Serial.print("P1: "); Serial.println(P1);
+        Serial.print("P2: "); Serial.println(P2);
+        Serial.print("T1: "); Serial.println(T1);
+        Serial.print("T2: "); Serial.println(T2);
+        Serial.print("Vx: "); Serial.println(Vx);
+        Serial.print("Vz: "); Serial.println(Vz);
+        Serial.print("Ct: "); Serial.println(Ct);
+        Serial.print("Vt: "); Serial.println(Vt);
+
+
+        // Retrieve control limits from the config file
+        // Retrieve control limits from the config file
+        bool allowControlLimits = configDoc["board_data"]["allow_control_limits"];
+        bool allowTempControlLimits = configDoc["board_data"]["allow_control_limits"];
+
+        float p1PlusMinus = configDoc["board_data"]["control_limits"]["P1"]["plus_minus"];
+        float p1AdditionalValue = configDoc["board_data"]["control_limits"]["P1"]["additional_value"];
+
+        float p2PlusMinus = configDoc["board_data"]["control_limits"]["P2"]["plus_minus"];
+        float p2AdditionalValue = configDoc["board_data"]["control_limits"]["P2"]["additional_value"];
+
+        float t1LowTemp = configDoc["board_data"]["control_limits"]["T1"]["low_temp_value"];
+        float t1HighTemp = configDoc["board_data"]["control_limits"]["T1"]["high_temp_value"];
+        float t1PlusMinus = configDoc["board_data"]["control_limits"]["T1"]["plus_minus"];
+
+        float t2LowTemp = configDoc["board_data"]["control_limits"]["T2"]["low_temp_value"];
+        float t2HighTemp = configDoc["board_data"]["control_limits"]["T2"]["high_temp_value"];
+        float t2PlusMinus = configDoc["board_data"]["control_limits"]["T2"]["plus_minus"];
+
+        float vxPlusMinus = configDoc["board_data"]["control_limits"]["Vx"]["plus_minus"];
+        float vxAdditionalValue = configDoc["board_data"]["control_limits"]["Vx"]["additional_value"];
+
+        float vzPlusMinus = configDoc["board_data"]["control_limits"]["Vz"]["plus_minus"];
+        float vzAdditionalValue = configDoc["board_data"]["control_limits"]["Vz"]["additional_value"];
+
+        float ctPlusMinus = configDoc["board_data"]["control_limits"]["Ct"]["plus_minus"];
+        float ctAdditionalValue = configDoc["board_data"]["control_limits"]["Ct"]["additional_value"];
+
+        float vtPlusMinus = configDoc["board_data"]["control_limits"]["Vt"]["plus_minus"];
+        float vtAdditionalValue = configDoc["board_data"]["control_limits"]["Vt"]["additional_value"];
+
+        // Prepare the data to be sent to the WebSocket server
+        DynamicJsonDocument sendDoc(1024);
+        sendDoc["type"] = "newOvenData";
+
+        JsonObject data = sendDoc.createNestedObject("data");
+        data["ovenId"] = storedOvenName;
+        data["boardId"] = boardNumber;
+        data["dataType"] = "Board";
+        data["timestamp"] = timeStamp(); // Create a timestamp function
+
+        // Include the current oven temperature and its control limits
+        data["temperature"] = currentTemperature;
+        data["temperatureUpperControlLimit"] = nullptr;
+        data["temperatureLowerControlLimit"] = nullptr;
+
+        // Assign values to the JSON object, or set to null if the value is missing (-1 means missing)
+        if (P1 != -1) {
+            data["p1"] = P1;
+        } else {
+            data["p1"] = nullptr;
+        }
+
+        if (P2 != -1) {
+            data["p2"] = P2;
+        } else {
+            data["p2"] = nullptr;
+        }
+
+        if (T1 != -1) {
+            data["t1"] = T1;
+        } else {
+            data["t1"] = nullptr;
+        }
+
+        if (T2 != -1) {
+            data["t2"] = T2;
+        } else {
+            data["t2"] = nullptr;
+        }
+
+        if (Vx != -1) {
+            data["vx"] = Vx;
+        } else {
+            data["vx"] = nullptr;
+        }
+
+        if (Vz != -1) {
+            data["vz"] = Vz;
+        } else {
+            data["vz"] = nullptr;
+        }
+
+        if (Ct != -1) {
+            data["ct"] = Ct;
+        } else {
+            data["ct"] = nullptr;
+        }
+
+        if (Vt != -1) {
+            data["vt"] = Vt;
+        } else {
+            data["vt"] = nullptr;
+        }
+       // Calculate and set control limits for P1 if plus_minus is greater than 0
+        if (allowControlLimits && p1PlusMinus > 0.0) {
+            float p1UpperControlLimit = p1AdditionalValue + p1PlusMinus;
+            float p1LowerControlLimit = p1AdditionalValue - p1PlusMinus;
+            data["p1UpperControlLimit"] = p1UpperControlLimit;
+            data["p1LowerControlLimit"] = p1LowerControlLimit;
+        } else {
+            data["p1UpperControlLimit"] = nullptr;
+            data["p1LowerControlLimit"] = nullptr;
+        }
+
+        // Calculate and set control limits for P2 if plus_minus is greater than 0
+        if (allowControlLimits && p2PlusMinus > 0.0) {
+            float p2UpperControlLimit = p2AdditionalValue + p2PlusMinus;
+            float p2LowerControlLimit = p2AdditionalValue - p2PlusMinus;
+            data["p2UpperControlLimit"] = p2UpperControlLimit;
+            data["p2LowerControlLimit"] = p2LowerControlLimit;
+        } else {
+            data["p2UpperControlLimit"] = nullptr;
+            data["p2LowerControlLimit"] = nullptr;
+        }
+
+        // Determine and set control limits for T1 based on proximity to lowTemp or highTemp
+        if (T1 != -1 && allowControlLimits && t1PlusMinus > 0.0) {
+            float t1UpperControlLimit, t1LowerControlLimit;
+            if (fabs(T1 - t1LowTemp) < fabs(T1 - t1HighTemp)) {
+                t1UpperControlLimit = t1LowTemp + t1PlusMinus;
+                t1LowerControlLimit = t1LowTemp - t1PlusMinus;
+            } else {
+                t1UpperControlLimit = t1HighTemp + t1PlusMinus;
+                t1LowerControlLimit = t1HighTemp - t1PlusMinus;
+            }
+            data["t1UpperControlLimit"] = t1UpperControlLimit;
+            data["t1LowerControlLimit"] = t1LowerControlLimit;
+        } else {
+            data["t1UpperControlLimit"] = nullptr;
+            data["t1LowerControlLimit"] = nullptr;
+        }
+
+        // Determine and set control limits for T2 based on proximity to lowTemp or highTemp
+        if (T2 != -1 && allowControlLimits && t2PlusMinus > 0.0) {
+            float t2UpperControlLimit, t2LowerControlLimit;
+            if (fabs(T2 - t2LowTemp) < fabs(T2 - t2HighTemp)) {
+                t2UpperControlLimit = t2LowTemp + t2PlusMinus;
+                t2LowerControlLimit = t2LowTemp - t2PlusMinus;
+            } else {
+                t2UpperControlLimit = t2HighTemp + t2PlusMinus;
+                t2LowerControlLimit = t2HighTemp - t2PlusMinus;
+            }
+            data["t2UpperControlLimit"] = t2UpperControlLimit;
+            data["t2LowerControlLimit"] = t2LowerControlLimit;
+        } else {
+            data["t2UpperControlLimit"] = nullptr;
+            data["t2LowerControlLimit"] = nullptr;
+        }
+
+        // Calculate and set control limits for Vx if plus_minus is greater than 0
+        if (allowControlLimits && vxPlusMinus > 0.0) {
+            float vxUpperControlLimit = vxAdditionalValue + vxPlusMinus;
+            float vxLowerControlLimit = vxAdditionalValue - vxPlusMinus;
+            data["vxUpperControlLimit"] = vxUpperControlLimit;
+            data["vxLowerControlLimit"] = vxLowerControlLimit;
+        } else {
+            data["vxUpperControlLimit"] = nullptr;
+            data["vxLowerControlLimit"] = nullptr;
+        }
+
+        // Calculate and set control limits for Vz if plus_minus is greater than 0
+        if (allowControlLimits && vzPlusMinus > 0.0) {
+            float vzUpperControlLimit = vzAdditionalValue + vzPlusMinus;
+            float vzLowerControlLimit = vzAdditionalValue - vzPlusMinus;
+            data["vzUpperControlLimit"] = vzUpperControlLimit;
+            data["vzLowerControlLimit"] = vzLowerControlLimit;
+        } else {
+            data["vzUpperControlLimit"] = nullptr;
+            data["vzLowerControlLimit"] = nullptr;
+        }
+
+        // Calculate and set control limits for Ct if plus_minus is greater than 0
+        if (allowControlLimits && ctPlusMinus > 0.0) {
+            float ctUpperControlLimit = ctAdditionalValue + ctPlusMinus;
+            float ctLowerControlLimit = ctAdditionalValue - ctPlusMinus;
+            data["ctUpperControlLimit"] = ctUpperControlLimit;
+            data["ctLowerControlLimit"] = ctLowerControlLimit;
+        } else {
+            data["ctUpperControlLimit"] = nullptr;
+            data["ctLowerControlLimit"] = nullptr;
+        }
+
+        // Calculate and set control limits for Vt if plus_minus is greater than 0
+        if (allowControlLimits && vtPlusMinus > 0.0) {
+            float vtUpperControlLimit = vtAdditionalValue + vtPlusMinus;
+            float vtLowerControlLimit = vtAdditionalValue - vtPlusMinus;
+            data["vtUpperControlLimit"] = vtUpperControlLimit;
+            data["vtLowerControlLimit"] = vtLowerControlLimit;
+        } else {
+            data["vtUpperControlLimit"] = nullptr;
+            data["vtLowerControlLimit"] = nullptr;
+        }
+        data["hasOvenControlLimits"] = false;
+        data["hasBoardControlLimits"] = allowControlLimits;
+
+        String output;
+        serializeJson(sendDoc, output);
+        // Check if the boardNumber is valid (i.e., a number larger than 0)
+        if (boardNumber > 0) {
+            // Serialize and send the JSON data over WebSocket
+            String output;
+            serializeJson(sendDoc, output);
+            client.send(output);
+            Serial.println("Sent board data: " + output);
+        } else {
+            Serial.println("Invalid board number, data not sent.");
+        }
+        Serial.println("Sent board data: " + output);
+    } else {
+        Serial.println("Received invalid board data format.");
+    }
+}
 
 String timeStamp() {
   time_t now = time(nullptr);
@@ -312,16 +582,21 @@ void setup() {
 void loop() {
   // Handle WebSocket events
   client.poll();
-
+  // Variable to store board data if available
+  String boardData = "";
   // Check for data from the serial port
   if (Serial.available() > 0) {
     String serialInput = Serial.readStringUntil('\n');
     serialInput.trim();  // Remove any trailing newline or spaces
-
+    Serial.println(serialInput);
     // Check if the input starts with "JSON:"
     if (serialInput.startsWith("JSON:")) {
       String jsonString = serialInput.substring(5);  // Extract the JSON part
       storeJsonConfig(jsonString);  // Store the JSON configuration
+    } else if (serialInput.startsWith("Board:")) {
+      // Store board data if it starts with "Board:"
+          handleBoardData(serialInput, max31856.readThermocoupleTemperature(), 0, 0);
+      Serial.println(serialInput);
     } else {
       int separatorIndex = serialInput.indexOf(' ');
       if (separatorIndex != -1) {
@@ -389,7 +664,6 @@ void loop() {
   // Perform actions in Active state
   else if (currentState == "Active") {
     unsigned long currentTime = millis();
-    
     // Log temperature every 10 seconds
     if (currentTime - lastTempCheckTime >= tempCheckInterval) {
       // Read temperature from MAX31856
@@ -417,7 +691,7 @@ void loop() {
       String trend = analyzeTemperatureTrend(lowerTempValue, highTempValue, tempLimitsPlusMinus);
       Serial.println("Temperature Trend: " + trend);
 
-      // Send active temperature data with the new logic
+      // Send active temperature data with the new logic, passing boardData if available
       sendActiveTemperatureData(max31856.readThermocoupleTemperature(), lowerTempValue, highTempValue, tempLimitsPlusMinus, allowControlLimits, rampRate, trend);
 
       lastMessageTime = currentTime;
