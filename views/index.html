@@ -1,63 +1,54 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title> DCS </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>
-    function fetchData() {
-      fetch('/data')
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById('data').innerText = data;
-        });
-    }
-
-    setInterval(fetchData, 1000); // Fetch data every second
-  </script>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/devices.css">
   <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&amp;display=swap">
-</head>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js'></script>
+  <script src="https://cdn.plot.ly/plotly-2.34.0.min.js" charset="utf-8"></script>
+  <!-- DateRange -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/3/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
 <body>
   <div class="sidebar">
     <div class="logo-details">
-      <i class='bx bx-game icon' ></i>
+      <i class='bx bx-game icon'></i>
       <div class="logo_name">CB PacDash</div>
       <i class='bx bx-menu' id="btn"></i>
     </div>
     <ul class="nav-list">
       <li>
-        <a href="#">
-          <i class='bx bx-grid-alt'></i>
-          <span class="links_name">Dashboard</span>
-        </a>
-        <span class="tooltip">Dashboard</span>
-      </li>
-      <li>
-        <a href="#">
+        <a href="/">
           <i class='bx bx-devices'></i>
           <span class="links_name">Devices</span>
         </a>
         <span class="tooltip">Devices</span>
       </li>
       <li>
-        <a href="#">
+        <a href="/fileManager">
           <i class='bx bx-folder'></i>
           <span class="links_name">File Manager</span>
         </a>
         <span class="tooltip">Files</span>
       </li>
       <li>
-        <a href="#">
+        <a href="/settings">
           <i class='bx bx-cog'></i>
           <span class="links_name">Settings</span>
         </a>
         <span class="tooltip">Settings</span>
       </li>
       <li>
-        <a href="#">
+        <a href="/about">
           <i class='bx bx-info-circle'></i>
           <span class="links_name">About</span>
         </a>
@@ -66,10 +57,42 @@
     </ul>
   </div>
   <section class="home-section">
-    <div class="text">
-      <h1>Latest Data</h1>
-      <p id="data">No data yet</p>
-    </div>
+    <div class="dev-wrapper">
+      <div class="selection-frame">
+        <div class="dev-dropdown-wrapper">
+          <div class="dropdown" id="drop1">
+            <div class="select">
+              <span class="selected">All Machines</span>
+              <div class="caret"></div>
+            </div>
+            <ul class="menu" id="categoryFilter">
+              <li data-category="All" class="active-menu">All Machines</li>
+              <li data-category="E Series">E Series</li>
+              <li data-category="C Series">C Series</li>
+              <li data-category="Schlumberger">Schlumberger</li>
+            </ul>
+          </div>
+        </div>
+        <div class="dev-search-wrapper">
+          <input type="text" id="searchInput" placeholder="Search..">
+        </div>
+        <div class="dev-list-wrapper" id="oven-container">
+        </div>
+      </div>
+      <div class="view-frame" id="style-1">
+        <div class="view-header">
+          <div class="view-header-name"></div>
+          <div class="view-options" id="viewFilter">
+            <div data-view="Overview" class="view-option view-active">Overview</div>
+            <div data-view="Tool Monitoring" class="view-option">Tool Monitoring</div>
+            <div data-view="Diagnostics" class="view-option">Diagnostics</div>
+            <div data-view="Maintenance" class="view-option">Maintenance</div>
+          </div>
+        </div>
+        <div class="view-main">
+        </div>
+      </div>
   </section>
   <script src="/js/front.js"></script>
+  <script src="/js/devices.js"></script>
 </body>

@@ -431,8 +431,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/views/index.html'));
 });
 
-app.get('/devices',(req, res) => {
-  res.sendFile(path.join(__dirname + '/views/devices.html'));
+app.get('/about',(req, res) => {
+  res.sendFile(path.join(__dirname + '/views/about.html'));
 });
 app.get('/fileManager', (req, res) => {
   res.sendFile(path.join(__dirname + '/views/filelog.html'));

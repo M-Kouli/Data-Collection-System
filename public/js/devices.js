@@ -1414,7 +1414,12 @@ function setupDropdownEventListeners(dropdownId,oven) {
         // Fetch and update chart data based on the selection
         if (dropdownId === 'drop3' || dropdownId === 'drop4' || dropdownId === 'drop5') {
           const type = document.querySelector('#drop3 .selected').innerText;
-          const option = document.querySelector('#drop4 .selected').innerText;
+          let option = document.querySelector('#drop4 .selected').innerText;
+          if (option === "Cf-Cz") {
+            option = "Ct";
+          } else if (option === "Tm") {
+            option = "Vt";
+          }
           const boardNumber = document.querySelector('#drop5 .selected')?.innerText;
           const activeID = document.querySelector('#runNumber')?.innerText;
           if (oven instanceof Element) {
@@ -1452,12 +1457,22 @@ function setupDropdownEventListeners(dropdownId,oven) {
         selected4.innerText = 'Temperature';
         dropdown5.classList.add('hidden');
       } else if (selectedCategory === 'Board') {
-        const boardOptions = ["All","P1", "P2", "T1", "T2", "Vx","Vz","Ct","Vt"];
-        for (let i = 0; i <= 8; i++) {
-          const li = document.createElement('li');
-          li.textContent = boardOptions[i];
-          li.dataset.category = boardOptions[i];
-          menu4.appendChild(li);
+        if (oven.name !== undefined ? oven.name : oven.firstChild.innerHTML === 'Treebeard'){
+          const boardOptions = ["All","P1", "P2", "T1", "T2", "Vx","Vz","Cf-Cz","Tm"];
+          for (let i = 0; i <= 8; i++) {
+            const li = document.createElement('li');
+            li.textContent = boardOptions[i];
+            li.dataset.category = boardOptions[i];
+            menu4.appendChild(li);
+          }
+        } else{
+          const boardOptions = ["All","P1", "P2", "T1", "T2", "Vx","Vz","Ct","Vt"];
+          for (let i = 0; i <= 8; i++) {
+            const li = document.createElement('li');
+            li.textContent = boardOptions[i];
+            li.dataset.category = boardOptions[i];
+            menu4.appendChild(li);
+          }
         }
         selected4.innerText = 'All';
         dropdown5.classList.remove('hidden');

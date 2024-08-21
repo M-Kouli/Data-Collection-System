@@ -43,7 +43,8 @@ def load_config():
                     "Vt": {"plus_minus": 0.0,  "additional_value": 0.0}
                 },
                 "sequence": "P1 P2 T1 T2 Vx Vz Ct Vt"
-            }
+            },
+            "transmitter_com":"",
         }
         save_config(config)  # Save default config to file
 
@@ -68,12 +69,13 @@ class OvenMonitor:
         self.temperature = 0
         self.board_number = 1
         self.last_data_time = time.time()
-        self.BOARD_RESET_TIME = 0.1 * 60  # 20 minutes in seconds
+        self.BOARD_RESET_TIME = 20 * 60  # 20 minutes in seconds
 
     def establish_connection(self, oven_name):
         try:
             if not self.connected:
-                self.ser = serial.Serial('COM4', 9600, timeout=1)  # Adjust 'COM4' as per your setup
+                transmitter_com = app.config["transmitter_com"]
+                self.ser = serial.Serial(transmitter_com, 9600, timeout=1)  # Adjust 'COM4' as per your setup
                 time.sleep(2)  # Allow time for the serial connection to establish
                 
                 # Send CONNECT command
@@ -164,8 +166,10 @@ class OvenMonitor:
             # Call your specific function or script here based on the Modbus configuration
             print(f"Data Source: {data_source}, Treebeard: {is_treebeard}, Folder Path: {folder_path}")
             # For example:
-            self.log_modbus_data(is_treebeard, folder_path)
-
+            try:
+                self.log_modbus_data(is_treebeard, folder_path)
+            except Exception as e:
+                print(f"Error: {e}")
         elif data_source == "Burnsys":
             com_port = board_data["com_port"]
             # Call your specific function or script here based on the Burnsys configuration
@@ -228,7 +232,9 @@ class OvenMonitor:
                 "T1": "P3.Ti",
                 "T2": "P11.Td",
                 "Vx": "P6.Ax",
-                "Vz": "P13.Ay"
+                "Vz": "P13.Ay",
+                "Ct": "P8.Ct",
+                "Vt":  "P9.Vt"
             }
             # Extract the board number from the filename
             board_number_match = re.search(r'_(\d+)_', filename)
@@ -250,12 +256,14 @@ class OvenMonitor:
 
             # Example positions, these need to be checked against your actual data:
             position_mapping = {
-                "P1": 36,  # Example index, adjust based on your file format
-                "P2": 37,  # Example index, adjust based on your file format
-                "T1": 38,  # Example index, adjust based on your file format
-                "T2": 46,  # Example index, adjust based on your file format
-                "Vx": 41,  # Example index, adjust based on your file format
-                "Vz": 48   # Example index, adjust based on your file format
+                "P1": 21,  # adjust based on your file format
+                "P2": 22,  # adjust based on your file format
+                "T1": 23,  # adjust based on your file format
+                "T2": 24,  # adjust based on your file format
+                "Vx": 26,  # adjust based on your file format
+                "Vz": 27,  # adjust based on your file format
+                "Ct": 50,  # adjust based on your file format
+                "Vt": 25   # adjust based on your file format
             }
 
             # Map the sequence to the corresponding values
@@ -341,7 +349,7 @@ class OvenMonitor:
             # Run the logging process every 5 minutes
             while self.monitoring:
                 read_new_data()
-                time.sleep(1)  # Check for new data every 5 minutes
+                time.sleep(300)  # Check for new data every 5 minutes
 
         # Start the logging in a separate thread
         threading.Thread(target=logging_loop, daemon=True).start()
@@ -352,7 +360,14 @@ class OvenMonitor:
 
         def read_data_from_com(port):
             try:
-                ser = serial.Serial(port, 9600, timeout=1)
+                try:
+                    ser = serial.Serial(port, 9600, timeout=1)
+                    ser.isOpen() # try to open port, if possible print message and proceed
+                    print ("port is opened!")
+                except IOError: # if port is already opened, close it and open it again and print message
+                    ser.close()
+                    ser.open()
+                    print ("port was already open, was closed and opened again!")
                 ser.flush()
 
                 while True:
@@ -474,6 +489,14 @@ class EditConfigWindow(tk.Toplevel):
         self.create_config_widgets()
 
     def create_config_widgets(self):
+        # General Settings
+        self.transmitter_frame = tk.LabelFrame(self.scrollable_frame, text="Transmitter Port")
+        self.transmitter_frame.pack(pady=10, fill="x", padx=10)
+
+        self.trans_com_port_var = tk.StringVar(value=self.config["transmitter_com"])
+        self.trans_com_port_entry = tk.Entry(self.transmitter_frame, textvariable=self.trans_com_port_var)
+        self.trans_com_port_entry.pack(fill="x", padx=5, pady=5)  # Display entry field correctly
+
         # Logging Board Data Checkbox
         self.logging_frame = tk.LabelFrame(self.scrollable_frame, text="Logging")
         self.logging_frame.pack(pady=10, fill="x", padx=10)
@@ -603,6 +626,7 @@ class EditConfigWindow(tk.Toplevel):
             self.com_port_entry.pack(fill="x", pady=5)
 
     def save_config(self):
+        self.config["transmitter_com"] = self.trans_com_port_var.get()
         self.config["log_board_data"] = self.log_board_data_var.get()
         self.config["temperature_control"]["allow_control_limits"] = self.allow_control_limits_var.get()
         self.config["temperature_control"]["lower_temp_value"] = self.lower_temp_value_var.get()
