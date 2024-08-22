@@ -20,14 +20,28 @@
     min-width: 25em;
 }
 
-.saveOven {
+
+.manageBoardParameters {
+    display: flex;
+    flex-direction: column;
+    min-width: 25em;
+}
+.manageBoardParameters h3{
+    font-size: 1em;
+    font-weight: 400;
+    margin-bottom: 8px;
+}
+
+.saveOven,
+.manageBoardParameters {
     background: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.saveOven h1{
+.saveOven h1,
+.manageBoardParameters h2{
     font-size: 1.2em;
     font-weight: 500;
     padding-bottom: 1em;
@@ -42,23 +56,31 @@
     flex-direction: column;
 }
 
+
+.boardParametersForm{
+    margin-top: 2em;
+}
+
 .manageOvens form,
 .boardParametersForm {
     display: flex;
     flex-direction: column;
 }
-.manageOvens form label {
+.manageOvens form label,
+.boardParametersForm label {
     margin-bottom: 8px;
 }
 
-.manageOvens form input[type="text"] {
+.manageOvens form input[type="text"],
+.boardParametersForm input[type="Number"] {
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
 
-.manageOvens form button {
+.manageOvens form button,
+.boardParametersForm button {
     background-color: #28a745;
     color: white;
     padding: 10px 15px;
@@ -68,7 +90,8 @@
     font-size: 16px;
 }
 
-.manageOvens form button:hover {
+.manageOvens form button:hover,
+.boardParametersForm button:hover {
     background-color: #218838;
 }
 
@@ -176,7 +199,6 @@
 .dropdown {
     background-color: #fbfdff;
     min-width: 10em;
-    max-width: 20em;
     position: relative;
     top: 0;
     border-radius: 0.5em;
@@ -218,7 +240,7 @@
     border-radius: 0.5em;
     color: #b1b7c7;
     position: absolute;
-    top: 10%;
+    top: 110%;
     left: 50%;
     width: 100%;
     transform: translateX(-50%);
@@ -251,4 +273,15 @@
 .menu-open {
     display: block;
     opacity: 1;
+}
+
+
+.entry-div{
+    display: flex;
+    gap: 1em;
+}
+
+.first-param, .second-param{
+    display: flex;
+    flex-direction: column;
 }
