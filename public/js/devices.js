@@ -13,17 +13,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeOvens = {};
   const timers = {}; // Object to store the intervals for each oven
 
+// Initialize an empty object to store the max boards per oven
+const maxBoardsPerOven = {};
 
-  // Assume this information is known or fetched from the server
-  const maxBoardsPerOven = {
-    "Gollum": 5,
-    "Treebeard": 3,
-    "Gimli": 5,
-    "Saruman": 6,
-    "Galadriel": 2,
-    "Peregrin": 7,
-    "Frodo": 4
-  };
+try {
+    // Fetch all ovens from the server
+    const response = await fetch('/ovens');
+    if (!response.ok) throw new Error('Failed to fetch ovens');
+
+    const ovens = await response.json();
+
+    // Iterate through each oven to fetch its board number
+    for (const oven of ovens) {
+        const ovenId = oven.name;  // Assuming ovenName is the unique identifier
+
+        try {
+            // Fetch the board parameters for this specific oven
+            const boardResponse = await fetch(`${ovenId}/boards`);
+            if (boardResponse.ok) {
+                const boardData = await boardResponse.json();
+                const boardNumber = boardData.boardNumber || 1;  // Default to 1 if no boardNumber is found
+
+                // Add to maxBoardsPerOven object
+                maxBoardsPerOven[ovenId] = boardNumber;
+            } else {
+                console.log(`No board data found for oven ${ovenId}, setting board number to 1`);
+                maxBoardsPerOven[ovenId] = 1;  // Default to 1 if the fetch fails
+            }
+        } catch (err) {
+            console.error(`Error fetching board data for oven ${ovenId}:`, err);
+            maxBoardsPerOven[ovenId] = 1;  // Default to 1 on error
+        }
+    }
+
+    console.log('Max Boards Per Oven:', maxBoardsPerOven);
+} catch (err) {
+    console.error('Failed to fetch ovens:', err);
+}
 
   // Plotly setup
   let plotlyChart;
@@ -63,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Function to update the chart data and title
-  function updateChartData(newData, type, option, boardNum = null) {
+  async function updateChartData(newData, type, option, boardNum = null) {
     chartData = newData;
     console.log(option);
   
@@ -72,21 +98,50 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log(boardNumbers);
   
       const normalizedOption = option.charAt(0).toLowerCase() + option.slice(1);
-      const controlLimits = {
-        temperature: { upper: 255, lower: 145 },
-        p1: { upper: 65, lower: 15 },
-        p2: { upper: 65, lower: 15 },
-        t1: { upper: 65, lower: 15 },
-        t2: { upper: 65, lower: 15 },
-        vx: { upper: 65, lower: 15 },
-        vz: { upper: 65, lower: 15 },
-        ct: { upper: 65, lower: 15 },
-        vt: { upper: 65, lower: 15 },
-      };
+    // Initialize controlLimits with null values
+      let controlLimits = {
+        temperature: { upper: null, lower: null },
+        p1: { upper: null, lower: null },
+        p2: { upper: null, lower: null },
+        t1: { upper: null, lower: null },
+        t2: { upper: null, lower: null },
+        vx: { upper: null, lower: null },
+        vz: { upper: null, lower: null },
+        ct: { upper: null, lower: null },
+        vt: { upper: null, lower: null },
+    };
+
+    // Fetch the control limits for the specific oven
+    try {
+        const response = await fetch(`${newData[0].ovenId}/boards`);
+        if (response.ok) {
+            const data = await response.json();
+            const { parameters } = data;
+
+            // If parameters exist, update controlLimits
+            if (parameters) {
+                controlLimits = {
+                    temperature: parameters.temperature || { upper: null, lower: null },
+                    p1: parameters.p1 || { upper: null, lower: null },
+                    p2: parameters.p2 || { upper: null, lower: null },
+                    t1: parameters.t1 || { upper: null, lower: null },
+                    t2: parameters.t2 || { upper: null, lower: null },
+                    vx: parameters.vx || { upper: null, lower: null },
+                    vz: parameters.vz || { upper: null, lower: null },
+                    ct: parameters.ct || { upper: null, lower: null },
+                    vt: parameters.vt || { upper: null, lower: null },
+                };
+            }
+        } else {
+            console.log('No existing data found, setting default parameters as null.');
+        }
+    } catch (err) {
+        console.error('Failed to fetch control limits:', err);
+    }
   
       let maxIndex = 0;
-      const upperControlLimit = controlLimits[normalizedOption]?.upper || 255;
-      const lowerControlLimit = controlLimits[normalizedOption]?.lower || 145;
+      const upperControlLimit = controlLimits[normalizedOption]?.upper || null;
+      const lowerControlLimit = controlLimits[normalizedOption]?.lower || null;
   
       const traces = boardNumbers.map(boardId => {
         const boardData = newData.filter(d => d.boardId === boardId && d[normalizedOption] !== undefined);

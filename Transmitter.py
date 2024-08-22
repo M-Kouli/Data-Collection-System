@@ -66,6 +66,7 @@ class OvenMonitor:
         self.ser = None
         self.connected = False
         self.monitoring = False
+        self.running = True  # Control flag for the serial thread
         self.temperature = 0
         self.board_number = 1
         self.last_data_time = time.time()
@@ -96,10 +97,9 @@ class OvenMonitor:
                 print(f"Sent JSON data: {full_message.strip()}")
                 time.sleep(2)  # Wait for Arduino to process the JSON data
 
-                # Optionally, read Arduino responses for debugging
-                while self.ser.in_waiting > 0:
-                    response = self.ser.readline().decode().strip()
-                    print(f"Arduino response: {response}")
+                # Start the serial reading thread
+                self.serial_thread = threading.Thread(target=self.read_serial_data, daemon=True)
+                self.serial_thread.start()
 
                 self.connected = True
 
@@ -109,18 +109,25 @@ class OvenMonitor:
                 self.ser.write(idle_message.encode('ascii'))
                 print(f"Sent: {idle_message.strip()}")
                 time.sleep(1)
-                
-                # Read Arduino responses
-                while self.ser.in_waiting > 0:
-                    response = self.ser.readline().decode().strip()
-                    print(f"Arduino response: {response}")
             app.show_active_session_controls()
         except Exception as e:
             messagebox.showerror("Connection Error", f"Failed to establish connection: {str(e)}")
-
+    
+    def read_serial_data(self):
+        while self.running:
+            try:
+                if self.ser.in_waiting > 0:
+                    line = self.ser.readline().decode('utf-8').strip()
+                    print(f"Received: {line}")
+                    # Process the line as needed, or store it for later processing
+                time.sleep(0.1)  # Small delay to avoid busy waiting
+            except serial.SerialException as e:
+                print(f"Serial exception: {e}")
+                break  # Exit the loop if there's a serial error
     def end_connection(self):
         self.connected = False
         self.monitoring = False
+        self.running = False
         if self.ser:
             self.ser.write("DISCONNECT\n".encode('utf-8'))
             time.sleep(1)  # Wait for Arduino to process and respond

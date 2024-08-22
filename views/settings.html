@@ -77,6 +77,79 @@
             <div class="manageSettings">
                 <h1>Manage Connection</h1>
             </div>
+            <div class="manageBoardParameters">
+                <h2>Manage Board Parameters</h2>
+                <h3>Select Oven: </h3> 
+                <div class="dropdown" id="drop6">
+                <div class="select">
+                  <span class="selected">Select an oven</span>
+                  <div class="caret"></div>
+                </div>
+                <ul class="menu"></ul>
+                <form id="boardParametersForm" class="boardParametersForm">
+                    <input type="hidden" id="ovenIdForBoards">
+                    <label for="boardNumber">Board Number:</label>
+                    <input type="number" id="boardNumber" placeholder="Enter board number" required autocomplete="off">
+            
+                    <h3>Parameters</h3>
+
+                    <label for="temperatureUpper">Temperature Upper:</label>
+                    <input type="number" id="temperatureUpper" placeholder="Enter upper limit for temperature" required autocomplete="off">
+            
+                    <label for="temperatureLower">Temperature Lower:</label>
+                    <input type="number" id="temperatureLower" placeholder="Enter lower limit for temperature" required autocomplete="off">
+            
+                    <label for="p1Upper">P1 Upper:</label>
+                    <input type="number" id="p1Upper" placeholder="Enter upper limit for P1" required autocomplete="off">
+            
+                    <label for="p1Lower">P1 Lower:</label>
+                    <input type="number" id="p1Lower" placeholder="Enter lower limit for P1" required autocomplete="off">
+            
+                    <label for="p2Upper">P2 Upper:</label>
+                    <input type="number" id="p2Upper" placeholder="Enter upper limit for P2" required autocomplete="off">
+            
+                    <label for="p2Lower">P2 Lower:</label>
+                    <input type="number" id="p2Lower" placeholder="Enter lower limit for P2" required autocomplete="off">
+            
+                    <label for="t1Upper">T1 Upper:</label>
+                    <input type="number" id="t1Upper" placeholder="Enter upper limit for T1" required autocomplete="off">
+            
+                    <label for="t1Lower">T1 Lower:</label>
+                    <input type="number" id="t1Lower" placeholder="Enter lower limit for T1" required autocomplete="off">
+            
+                    <label for="t2Upper">T2 Upper:</label>
+                    <input type="number" id="t2Upper" placeholder="Enter upper limit for T2" required autocomplete="off">
+            
+                    <label for="t2Lower">T2 Lower:</label>
+                    <input type="number" id="t2Lower" placeholder="Enter lower limit for T2" required autocomplete="off">
+            
+                    <label for="vxUpper">Vx Upper:</label>
+                    <input type="number" id="vxUpper" placeholder="Enter upper limit for Vx" required autocomplete="off">
+            
+                    <label for="vxLower">Vx Lower:</label>
+                    <input type="number" id="vxLower" placeholder="Enter lower limit for Vx" required autocomplete="off">
+            
+                    <label for="vzUpper">Vz Upper:</label>
+                    <input type="number" id="vzUpper" placeholder="Enter upper limit for Vz" required autocomplete="off">
+            
+                    <label for="vzLower">Vz Lower:</label>
+                    <input type="number" id="vzLower" placeholder="Enter lower limit for Vz" required autocomplete="off">
+            
+                    <label for="ctUpper">Ct Upper:</label>
+                    <input type="number" id="ctUpper" placeholder="Enter upper limit for Ct" required autocomplete="off">
+            
+                    <label for="ctLower">Ct Lower:</label>
+                    <input type="number" id="ctLower" placeholder="Enter lower limit for Ct" required autocomplete="off">
+            
+                    <label for="vtUpper">Vt Upper:</label>
+                    <input type="number" id="vtUpper" placeholder="Enter upper limit for Vt" required autocomplete="off">
+            
+                    <label for="vtLower">Vt Lower:</label>
+                    <input type="number" id="vtLower" placeholder="Enter lower limit for Vt" required autocomplete="off">
+            
+                    <button type="submit">Save Board Parameters</button>
+                </form>
+            </div>
 
         </div>
     </section>
@@ -90,10 +163,141 @@
             const ovenIdInput = document.getElementById('ovenId');
             const nameInput = document.getElementById('name');
             const categoryInput = document.getElementById('category');
-        
+            const drop6 = document.getElementById('drop6');
+            const selectedSpan = drop6.querySelector('.selected');
+            const menu = drop6.querySelector('.menu');
+            const boardParametersForm = document.getElementById('boardParametersForm');
+            
+              // Populate the oven dropdown
+            function populateOvenDropdown(ovens) {
+                menu.innerHTML = '<li data-category="" class="active-menu">Select an oven</li>';
+                ovens.forEach(oven => {
+                const li = document.createElement('li');
+                li.textContent = oven.name;
+                li.setAttribute('data-category', oven.name);
+                menu.appendChild(li);
+                });
+
+                // Add event listeners to the new menu items
+                setupDropdownEventListeners('drop6', ovens);
+            }
+            function setupDropdownEventListeners(dropdownId, ovens) {
+                const dropdown = document.getElementById(dropdownId);
+                if (!dropdown) return;
+                const select = dropdown.querySelector('.select');
+                const caret = dropdown.querySelector('.caret');
+                const menu = dropdown.querySelector('.menu');
+                const options = dropdown.querySelectorAll('.menu li');
+                const selected = dropdown.querySelector('.selected');
+                select.addEventListener('click', () => {
+                select.classList.toggle('select-clicked');
+                caret.classList.toggle('caret-rotate');
+                menu.classList.toggle('menu-open');
+                });
+                options.forEach(option => {
+                option.addEventListener('click', () => {
+                    selected.innerText = option.innerText;
+                    select.classList.remove('select-clicked');
+                    caret.classList.remove('caret-rotate');
+                    menu.classList.remove('menu-open');
+                    options.forEach(option => {
+                    option.classList.remove('active-menu');
+                    });
+                    option.classList.add('active-menu');
+                    // Fetch and update chart data based on the selection
+                    const selectedOven = option.getAttribute('data-category');
+                    if (selectedOven) {
+                        fetchBoardParameters(selectedOven);
+                    } else {
+                        alert("Select an oven first.");
+                    }
+                });
+                });
+            }
+            // Function to fetch the board parameters for a specific oven
+// Function to fetch the board parameters for a specific oven
+async function fetchBoardParameters(ovenId) {
+    try {
+        const response = await fetch(`${ovenId}/boards`);
+        if (response.ok) {
+            const { boardNumber, parameters } = await response.json();
+            
+            // Assuming you have references to these elements:
+            const ovenIdInputForBoards = document.getElementById('ovenIdForBoards');
+            const boardNumberInput = document.getElementById('boardNumber');
+            const temperatureUpperInput = document.getElementById('temperatureUpper');
+            const temperatureLowerInput = document.getElementById('temperatureLower');
+
+            const p1UpperInput = document.getElementById('p1Upper');
+            const p1LowerInput = document.getElementById('p1Lower');
+            const p2UpperInput = document.getElementById('p2Upper');
+            const p2LowerInput = document.getElementById('p2Lower');
+
+            const t1UpperInput = document.getElementById('t1Upper');
+            const t1LowerInput = document.getElementById('t1Lower');
+            const t2UpperInput = document.getElementById('t2Upper');
+            const t2LowerInput = document.getElementById('t2Lower');
+
+            const vxUpperInput = document.getElementById('vxUpper');
+            const vxLowerInput = document.getElementById('vxLower');
+            const vzUpperInput = document.getElementById('vzUpper');
+            const vzLowerInput = document.getElementById('vzLower');
+
+            const ctUpperInput = document.getElementById('ctUpper');
+            const ctLowerInput = document.getElementById('ctLower');
+            const vtUpperInput = document.getElementById('vtUpper');
+            const vtLowerInput = document.getElementById('vtLower');
+
+            const boardParametersForm = document.getElementById('boardParametersForm');
+
+            ovenIdInputForBoards.value = ovenId;
+            boardNumberInput.value = boardNumber;
+
+            temperatureUpperInput.value = parameters.temperature.upper;
+            temperatureLowerInput.value = parameters.temperature.lower;
+
+            p1UpperInput.value = parameters.p1.upper;
+            p1LowerInput.value = parameters.p1.lower;
+
+            p2UpperInput.value = parameters.p2.upper;
+            p2LowerInput.value = parameters.p2.lower;
+
+            t1UpperInput.value = parameters.t1.upper;
+            t1LowerInput.value = parameters.t1.lower;
+
+            t2UpperInput.value = parameters.t2.upper;
+            t2LowerInput.value = parameters.t2.lower;
+
+            vxUpperInput.value = parameters.vx.upper;
+            vxLowerInput.value = parameters.vx.lower;
+
+            vzUpperInput.value = parameters.vz.upper;
+            vzLowerInput.value = parameters.vz.lower;
+
+            ctUpperInput.value = parameters.ct.upper;
+            ctLowerInput.value = parameters.ct.lower;
+
+            vtUpperInput.value = parameters.vt.upper;
+            vtLowerInput.value = parameters.vt.lower;
+
+            // Set values for other parameters similarly
+
+        } else {
+            // If the oven is not found, clear the form
+            boardParametersForm.reset();
+            ovenIdInputForBoards.value = ovenId;
+            alert('No existing data found for this oven. You can create new data.');
+        }
+    } catch (err) {
+        console.error('Failed to fetch board parameters:', err);
+        alert('Error fetching board parameters. If a new oven is added, just proceed to save. Please try again.');
+    }
+}
+            
             async function fetchOvens() {
                 const response = await fetch('/ovens');
                 const ovens = await response.json();
+                populateOvenDropdown(ovens);
                 ovensList.innerHTML = '';
         
                 ovens.forEach(oven => {
@@ -173,7 +377,88 @@
                     manageSettingsDiv.appendChild(settingsContainer);
                 });
             }
-        
+            // Handle form submission
+    boardParametersForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        // Get the selected oven ID from the dropdown (data-category contains the ID)
+        const ovenId = document.querySelector('#drop6 .selected').innerHTML;
+        if (!ovenId || ovenId === "Select an oven") {
+            alert("Please select a valid oven before saving.");
+            return;
+        }
+
+        // Get form field values
+        const boardNumber = document.getElementById('boardNumber').value;
+
+        const parameters = {
+            temperature: {
+                upper: document.getElementById('temperatureUpper').value,
+                lower: document.getElementById('temperatureLower').value
+            },
+            p1: {
+                upper: document.getElementById('p1Upper').value,
+                lower: document.getElementById('p1Lower').value
+            },
+            p2: {
+                upper: document.getElementById('p2Upper').value,
+                lower: document.getElementById('p2Lower').value
+            },
+            t1: {
+                upper: document.getElementById('t1Upper').value,
+                lower: document.getElementById('t1Lower').value
+            },
+            t2: {
+                upper: document.getElementById('t2Upper').value,
+                lower: document.getElementById('t2Lower').value
+            },
+            vx: {
+                upper: document.getElementById('vxUpper').value,
+                lower: document.getElementById('vxLower').value
+            },
+            vz: {
+                upper: document.getElementById('vzUpper').value,
+                lower: document.getElementById('vzLower').value
+            },
+            ct: {
+                upper: document.getElementById('ctUpper').value,
+                lower: document.getElementById('ctLower').value
+            },
+            vt: {
+                upper: document.getElementById('vtUpper').value,
+                lower: document.getElementById('vtLower').value
+            }
+        };
+
+        console.log('Submitting the following data:');
+        console.log('Oven ID:', ovenId);
+        console.log('Board Number:', boardNumber);
+        console.log('Parameters:', parameters);
+
+        try {
+            const response = await fetch(`${ovenId}/boards`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ boardNumber, parameters })
+            });
+
+            console.log('Server response:', response);
+
+            if (response.ok) {
+                alert('Board parameters saved successfully!');
+                boardParametersForm.reset();
+            } else {
+                const errorText = await response.text(); // Get detailed error message from server
+                console.error('Server responded with an error:', errorText);
+                alert(`Failed to save board parameters. Server responded with: ${errorText}`);
+            }
+        } catch (err) {
+            console.error('Failed to save board parameters:', err);
+            alert('Error saving board parameters. Please try again.');
+        }
+    };
             ovenForm.onsubmit = async (e) => {
                 e.preventDefault();
                 const ovenId = ovenIdInput.value;

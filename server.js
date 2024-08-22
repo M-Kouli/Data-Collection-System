@@ -7,6 +7,7 @@ const OvenData = require('./models/OvenData');
 const OvenStatus = require('./models/OvenStatus');
 const Event = require('./models/Event'); // Add this line to import the Event model
 const WarningSettings = require('./models/WarningSettings');  // Import the new model
+const OvenParameters = require('./models/OvenParameters'); // Import the new model
 
 const app = express();
 const server = http.createServer(app);
@@ -256,6 +257,7 @@ wss.on('connection', async(ws) => {
   });
   ws.on('message', async message => {
     console.log('Received: %s', message);
+    console.log('This is active:', activeWebSockets);
     const parsedData = JSON.parse(message);
     if (parsedData.type === 'identify') {
       clientId = parsedData.clientId;
@@ -850,7 +852,93 @@ app.post('/api/oven/:ovenId/endConnection', async (req, res) => {
     res.status(500).json({ error: 'Failed to end connection.' });
   }
 });
+// Get board parameters for a specific oven
+app.get('/:ovenId/boards', async (req, res) => {
+  try {
+    const oven = await OvenParameters.findOne({ ovenName: req.params.ovenId});
+    if (!oven) return res.status(404).send('Oven not found');
+    
+    res.json({ boardNumber: oven.boardNumber, parameters: oven.parameters });
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
+});
 
+app.put('/:ovenId/boards', async (req, res) => {
+  const ovenId = req.params.ovenId;
+  const { boardNumber, parameters } = req.body;
+
+  console.log(`Received PUT request for oven: ${ovenId}`);
+  console.log('Request body:', req.body);
+
+  try {
+    // Convert boardNumber and parameter values to Numbers
+    const parsedBoardNumber = Number(boardNumber);
+    const parsedParameters = {
+      temperature: {
+        upper: Number(parameters.temperature.upper),
+        lower: Number(parameters.temperature.lower),
+      },
+      p1: {
+        upper: Number(parameters.p1.upper),
+        lower: Number(parameters.p1.lower),
+      },
+      p2: {
+        upper: Number(parameters.p2.upper),
+        lower: Number(parameters.p2.lower),
+      },
+      t1: {
+        upper: Number(parameters.t1.upper),
+        lower: Number(parameters.t1.lower),
+      },
+      t2: {
+        upper: Number(parameters.t2.upper),
+        lower: Number(parameters.t2.lower),
+      },
+      vx: {
+        upper: Number(parameters.vx.upper),
+        lower: Number(parameters.vx.lower),
+      },
+      vz: {
+        upper: Number(parameters.vz.upper),
+        lower: Number(parameters.vz.lower),
+      },
+      ct: {
+        upper: Number(parameters.ct.upper),
+        lower: Number(parameters.ct.lower),
+      },
+      vt: {
+        upper: Number(parameters.vt.upper),
+        lower: Number(parameters.vt.lower),
+      },
+    };
+
+    let oven = await OvenParameters.findOne({ ovenName: ovenId });
+
+    if (oven) {
+      // Update existing oven
+      oven.numberOfBoards = parsedBoardNumber;
+      oven.parameters = parsedParameters;
+      oven.boardNumber = parsedBoardNumber;
+      await oven.save();
+      res.json({ message: 'Oven updated successfully', oven });
+    } else {
+      // Create a new oven record
+      oven = new OvenParameters({
+        ovenName: ovenId,
+        numberOfBoards: parsedBoardNumber,
+        boardNumber: parsedBoardNumber,
+        parameters: parsedParameters
+      });
+
+      await oven.save();
+      res.status(201).json({ message: 'Oven created successfully', oven });
+    }
+  } catch (err) {
+    console.error('Error while handling PUT request:', err);
+    res.status(500).send('Server error');
+  }
+});
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
